@@ -41,7 +41,9 @@
         :scroll="{ x: 1366, y: 'calc(100vh - 350px)' }"
         bordered
         @change="handleTableChange"
-        :pagination="pagination">
+        :pagination="pagination"
+        size="small"
+    >
       <template #no="{ index }">
         <span>{{ (pagination.current - 1) * pagination.pageSize + index + 1 }}</span>
       </template>
@@ -57,55 +59,56 @@
 
 <script lang="ts">
 import {defineComponent, watch, ref, computed} from "vue";
-import {TableState, TableStateFilters} from 'ant-design-vue/es/table/interface';
+import {TableState, TableStateFilters} from "ant-design-vue/es/table/interface";
 import debounce from "lodash/debounce";
+import {Modal} from "ant-design-vue";
 
-type Pagination = TableState['pagination'];
+type Pagination = TableState["pagination"];
 
 interface RawData {
-  name: string,
-  description: string
+  username: string,
+  role: string
 }
 
 const columns = [
   {
-    title: 'No.',
-    key: 'index',
-    align: 'center',
+    title: "No.",
+    key: "index",
+    align: "center",
     width: 20,
-    slots: {customRender: 'no'}
+    slots: {customRender: "no"}
   },
   {
     title: "Username",
-    key: 'username',
-    dataIndex: 'username',
-    align: 'center',
+    key: "username",
+    dataIndex: "username",
+    align: "center",
     width: 100,
   },
   {
     title: "Role",
-    key: 'role',
-    dataIndex: 'role',
-    align: 'center',
+    key: "role",
+    dataIndex: "role",
+    align: "center",
     width: 100,
   },
   {
     title: "Actions",
-    key: 'actions',
-    align: 'center',
+    key: "actions",
+    align: "center",
     width: 100,
-    slots: {customRender: 'actions'}
+    slots: {customRender: "actions"}
   },
 ];
 
 const roleOptions = [
   {
-    value: 'admin',
-    label: 'Admin',
+    value: "admin",
+    label: "Admin",
   },
   {
-    value: 'moderator',
-    label: 'Moderator',
+    value: "moderator",
+    label: "Moderator",
   },
 ];
 
@@ -114,18 +117,18 @@ export default defineComponent({
   name: "AccountManagement",
   setup() {
     /*---------------------- variables ------------------------------*/
-    const rawData = [{username: 'ádasdasd', role: 'Moderator'}, {
-      username: 'penádasdasdasdasdding',
-      role: 'Admin'
+    const rawData = [{username: "ádasdasd", role: "Moderator"}, {
+      username: "penádasdasdasdasdding",
+      role: "Admin"
     }];
     const dataTable = rawData.map((prev: RawData, index: number) => {
       return {
         ...prev,
         key: index
-      }
+      };
     });
     // const debouncedGetAnswer = () => _.debounce(search, 5000)
-    const searchInput = ref<string>('');
+    const searchInput = ref<string>("");
     const current = ref<number | undefined>(1);
     const pageSize = 20;
     const total = ref(dataTable.length);
@@ -147,28 +150,41 @@ export default defineComponent({
     }));
 
     const handleTableChange = (page: Pagination, filters: TableStateFilters, sorter: any) => {
-      current.value = page?.current
+      current.value = page?.current;
       console.log("page", page?.current);
       console.log("filters", filters);
       console.log("sorter", sorter);
     };
 
     const onOpenModal = (type: string, title: string, record?: any, index?: number) => {
-      showModal.value = true
+      showModal.value = true;
       titleOfModal.value = title;
       typeModal.value = type;
       showModal.value = true;
-      if (type === 'edit') {
+      if (type === "edit") {
         username.value = record.username;
         password.value = record.password;
-        role.value = record.role
+        role.value = record.role;
       } else {
-        username.value = ""
-        password.value = ""
-        role.value = roleOptions[0].value
+        username.value = "";
+        password.value = "";
+        role.value = roleOptions[0].value;
       }
       console.log(record, index);
-    }
+    };
+
+    const onDeleteRow = (record: any, index: number) => {
+      Modal.confirm({
+        title: "Do you want to delete this account?",
+        content: "When clicked the OK button, this dialog will be closed after 1 second",
+        onOk() {
+          console.log("data", record);
+          console.log("index", index);
+        },
+        onCancel() {
+        },
+      });
+    };
 
     const handleResetModal = () => {
       username.value = "";
@@ -180,7 +196,7 @@ export default defineComponent({
     };
 
     const handleCancel = () => {
-      showModal.value = false
+      showModal.value = false;
     };
 
     const handleChangeFilter = (value: string) => {
@@ -208,10 +224,11 @@ export default defineComponent({
       handleOk,
       handleCancel,
       handleTableChange,
-      handleChangeFilter
-    }
+      handleChangeFilter,
+      onDeleteRow
+    };
   }
-})
+});
 </script>
 
 <style scoped lang="scss">

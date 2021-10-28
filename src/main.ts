@@ -1,28 +1,28 @@
-import {createApp} from 'vue';
-import App from './App.vue';
+import {createApp} from "vue";
+import App from "./App.vue";
 import router from "@/routes";
 import store from "@/store/index";
 import {Input, Button, Layout, Menu, Table, Select, Modal, Upload, Row, Col, Image, Dropdown} from "ant-design-vue";
-import 'ant-design-vue/dist/antd.css';
-import './assets/style.module..scss';
+import "ant-design-vue/dist/antd.css";
+import "./assets/style.module..scss";
 import {
-    FileDoneOutlined,
-    HomeOutlined,
-    PictureOutlined,
-    GiftOutlined,
-    SettingOutlined,
-    UserOutlined,
-    DatabaseOutlined,
-    MenuFoldOutlined,
-    MenuUnfoldOutlined,
-    PlusOutlined,
-    PlusCircleOutlined,
-    LogoutOutlined, SearchOutlined
+  FileDoneOutlined,
+  HomeOutlined,
+  PictureOutlined,
+  GiftOutlined,
+  SettingOutlined,
+  UserOutlined,
+  DatabaseOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  PlusOutlined,
+  PlusCircleOutlined,
+  LogoutOutlined, SearchOutlined
 } from "@ant-design/icons-vue";
 
-import DashboardLayout from './layouts/DashboardLayout.vue';
-import DefaultLayout from './layouts/DefaultLayout.vue';
-import AuthLayout from './layouts/AuthLayout.vue';
+import DashboardLayout from "./layouts/DashboardLayout.vue";
+import DefaultLayout from "./layouts/DefaultLayout.vue";
+import AuthLayout from "./layouts/AuthLayout.vue";
 
 const app = createApp(App);
 
@@ -58,4 +58,4 @@ app.use(Col);
 app.use(Image);
 app.use(Dropdown);
 
-app.mount('#app');
+app.mount("#app");

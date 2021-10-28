@@ -16,6 +16,7 @@
         bordered
         @change="handleTableChange"
         :pagination="pagination"
+        size="small"
     >
       <template #no="{ index }">
         <span>{{ (pagination.current - 1) * pagination.pageSize + index + 1 }}</span>
@@ -25,27 +26,26 @@
                  :width="100"/>
       </template>
       <template #actions="{ record }">
-          <span>
-            <a-button v-if="record.status === 'pending'" @click="showConfirm('approve', record, index)"
-                      :style="{marginRight: '10px'}" type="primary">Approve
-            </a-button>
-            <a-button v-if="record.status === 'pending'" @click="showConfirm('reject', record, index)"
-                      :style="{marginRight: '10px'}" danger ghost>Reject
-            </a-button>
-            <a-button v-if="record.status !== 'deleted'" @click="showConfirm('delete', record, index)" danger
-                      type="primary">Delete</a-button>
-          </span>
+        <a-button v-if="record.status === 'pending'" @click="showConfirm('approve', record, index)"
+                  :style="{marginRight: '10px'}" type="primary">Approve
+        </a-button>
+        <a-button v-if="record.status === 'pending'" @click="showConfirm('reject', record, index)"
+                  :style="{marginRight: '10px'}" danger ghost>Reject
+        </a-button>
+        <a-button v-if="record.status !== 'deleted'" @click="showConfirm('delete', record, index)" danger
+                  type="primary">Delete
+        </a-button>
       </template>
     </a-table>
   </div>
 </template>
 
 <script lang="ts">
-import {Modal} from 'ant-design-vue';
+import {Modal} from "ant-design-vue";
 import {defineComponent, ref, computed} from "vue";
-import {TableState, TableStateFilters} from 'ant-design-vue/es/table/interface';
+import {TableState, TableStateFilters} from "ant-design-vue/es/table/interface";
 
-type Pagination = TableState['pagination'];
+type Pagination = TableState["pagination"];
 
 interface DataTable {
   key?: number | string,
@@ -66,88 +66,87 @@ interface RawData {
   updatedBy?: string
 }
 
-
 const columns = [
   {
-    title: 'No.',
-    key: 'no',
-    align: 'center',
+    title: "No.",
+    key: "no",
+    align: "center",
     width: 50,
-    slots: {customRender: 'no'},
+    slots: {customRender: "no"},
   },
   {
-    title: 'Thumbnail',
-    key: 'thumbnail',
-    dataIndex: 'url',
-    align: 'center',
+    title: "Thumbnail",
+    key: "thumbnail",
+    dataIndex: "url",
+    align: "center",
     width: 150,
-    slots: {customRender: 'thumbnail'},
+    slots: {customRender: "thumbnail"},
   },
   {
-    title: "Likes",
-    key: 'likes',
-    align: 'center',
+    title: "Number of Likes",
+    key: "likes",
+    align: "center",
     width: 100,
     sorter: true,
-    sortDirections: ['ascend', 'descend']
+    sortDirections: ["ascend", "descend"]
   },
   {
     title: "Owner's Email",
-    key: 'email',
-    align: 'center',
+    key: "email",
+    align: "center",
     width: 200,
   },
   {
     title: "Status",
-    key: 'status',
-    dataIndex: 'status',
-    align: 'center',
+    key: "status",
+    dataIndex: "status",
+    align: "center",
     width: 100,
   },
   {
     title: "Publish Time",
-    key: 'time',
-    align: 'center',
+    key: "time",
+    align: "center",
     width: 150,
     sorter: true,
-    sortDirections: ['ascend', 'descend']
+    sortDirections: ["ascend", "descend"]
   },
   {
     title: "Updated by",
-    key: 'updatedBy',
-    align: 'center',
+    key: "updatedBy",
+    align: "center",
     width: 150,
   },
   {
     title: "Actions",
-    key: 'actions',
-    dataIndex: 'actions',
-    align: 'center',
+    key: "actions",
+    dataIndex: "actions",
+    align: "center",
     width: 200,
-    slots: {customRender: 'actions'},
+    slots: {customRender: "actions"},
   },
-]
+];
 
 const filterOptions = [
   {
-    value: '',
-    label: 'None',
+    value: "",
+    label: "None",
   },
   {
-    value: 'pending',
-    label: 'Pending',
+    value: "pending",
+    label: "Pending",
   },
   {
-    value: 'approved',
-    label: 'Approved',
+    value: "approved",
+    label: "Approved",
   },
   {
-    value: 'rejected',
-    label: 'Rejected',
+    value: "rejected",
+    label: "Rejected",
   },
   {
-    value: 'deleted',
-    label: 'Deleted',
+    value: "deleted",
+    label: "Deleted",
   },
 ];
 
@@ -155,12 +154,12 @@ export default defineComponent({
   name: "ImagesManagement",
   setup() {
     /* ----------------------- variables -------------------------*/
-    const rawData = [{status: 'pending', url: ''}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
+    const rawData = [{status: "pending", url: ""}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
     const dataTable = rawData.map((prev: RawData, index: number) => {
       return {
         ...prev,
         key: index
-      }
+      };
     });
     const select = ref<string>("");
     const current = ref<number | undefined>(1);
@@ -181,7 +180,7 @@ export default defineComponent({
     const showConfirm = (type: string, data: DataTable, index: number) => {
       Modal.confirm({
         title: `Do you want to ${type} this image?`,
-        content: 'When clicked the OK button, this dialog will be closed after 1 second',
+        content: "When clicked the OK button, this dialog will be closed after 1 second",
         onOk() {
           console.log(type);
           console.log("data", data);
@@ -189,15 +188,15 @@ export default defineComponent({
         },
         onCancel() {
         },
-      })
+      });
     };
 
     const handleTableChange = (page: Pagination, filters: TableStateFilters, sorter: any) => {
-      current.value = page?.current
+      current.value = page?.current;
       console.log("page", page?.current);
       console.log("filters", filters);
       console.log("sorter", sorter);
-    }
+    };
 
     /*---------------------------- hooks --------------------------*/
     return {
@@ -212,10 +211,10 @@ export default defineComponent({
       handleChangeFilter,
       showConfirm,
       handleTableChange
-    }
+    };
   },
   methods: {}
-})
+});
 </script>
 
 <style scoped lang="scss">

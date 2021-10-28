@@ -17,41 +17,41 @@
 
 <script lang="ts">
 import {computed, defineComponent, ref} from "vue";
-import {TableState, TableStateFilters} from 'ant-design-vue/es/table/interface';
+import {TableState, TableStateFilters} from "ant-design-vue/es/table/interface";
 
-type Pagination = TableState['pagination'];
+type Pagination = TableState["pagination"];
 
 const columns = [
   {
-    title: 'No.',
-    key: 'no',
-    align: 'center',
+    title: "No.",
+    key: "no",
+    align: "center",
     width: 100,
-    slots: {customRender: 'no'}
+    slots: {customRender: "no"}
   },
   {
-    title: 'Time',
-    key: 'time',
-    align: 'center',
+    title: "Time",
+    key: "time",
+    align: "center",
     width: 300,
     sorter: true,
   },
   {
     title: "Actions",
-    key: 'actions',
-    align: 'center',
+    key: "actions",
+    align: "center",
   },
 ];
 
 export default defineComponent({
   name: "Logs",
   setup() {
-    const rawData = [{status: 'pending'}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
+    const rawData = [{status: "pending"}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
     const dataTable = rawData.map((prev, index) => {
       return {
         ...prev,
         key: index
-      }
+      };
     });
     const current = ref<number | undefined>(1);
     const pageSize = 5;
@@ -65,11 +65,11 @@ export default defineComponent({
     }));
 
     const handleTableChange = (page: Pagination, filters: TableStateFilters, sorter: any) => {
-      current.value = page?.current
+      current.value = page?.current;
       console.log("page", page?.current);
       console.log("filters", filters);
       console.log("sorter", sorter);
-    }
+    };
 
     /*------------------------------- hooks -----------------------------*/
     return {
@@ -77,20 +77,9 @@ export default defineComponent({
       dataTable,
       pagination,
       handleTableChange
-    }
-  },
-  methods: {
-    onChange(selectedPage) {
-      this.current = selectedPage
-    },
-    onTableSort(props, _, sort) {
-      console.log(sort);
-    },
-    handleSort(type, sort) {
-      console.log(type, sort)
-    }
+    };
   }
-})
+});
 </script>
 
 <style scoped lang="scss">
