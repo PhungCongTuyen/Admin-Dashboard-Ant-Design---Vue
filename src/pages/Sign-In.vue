@@ -3,41 +3,48 @@
     <div class="auth-page-content">
       <div class="auth-page-input-field">
         <div class="auth-page-input-label">Email:</div>
-        <a-input class="auth-page-input" placeholder="Email" v-model="email"/>
+        <a-input class="auth-page-input" placeholder="Email" v-model:value="email"/>
       </div>
       <div class="auth-page-input-field">
         <div class="auth-page-input-label">Password:</div>
-        <a-input-password class="auth-page-input" placeholder="Password" type="password"  v-model="password"/>
+        <a-input-password class="auth-page-input" placeholder="Password" type="password" v-model:value="password"/>
       </div>
       <div class="auth-page-button">
-        <a-button :loading="loading" type="danger" @click="signIn">Log In</a-button>
+        <a-button :loading="loading" danger @click="signIn" type="primary">Log In</a-button>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-import store from "../store/index";
-export default {
-  name: "SignIn",
-  data() {
-    return {
-      loading: false,
-      email: "",
-      password: ""
-    }
-  },
-  methods: {
-    signIn() {
-      this.loading = true
-      this.$store.dispatch('setToken',{token: "ádasdasda", username: this.email})
-      localStorage.setItem('token', store.getters.userInfo.token)
-      console.log(this.email, this.password);
-      this.$router.history.push('/')
+<script lang="ts">
+import { useRouter } from 'vue-router';
+import { useStore } from 'vuex';
+import {defineComponent, ref} from 'vue';
 
-    }
-  }
-}
+export default defineComponent({
+  setup() {
+    const email = ref<string>('');
+    const password = ref<string>('');
+    const loading = ref<boolean>(false);
+    const store = useStore();
+    const router = useRouter();
+
+    const signIn = () => {
+      loading.value = true;
+      store.dispatch('setToken', {token: "ádasdasda", username: email.value});
+      localStorage.setItem('token', store.getters.userInfo.token);
+      console.log(email.value, password.value);
+      router.push('/images-management');
+    };
+
+    return {
+      email,
+      password,
+      loading,
+      signIn
+    };
+  },
+});
 </script>
 
 <style scoped lang="scss">
@@ -60,12 +67,15 @@ export default {
       display: flex;
       align-items: center;
       justify-content: space-between;
+
       &:first-child {
         margin-bottom: 10px;
       }
+
       .auth-page-input-label {
 
       }
+
       .auth-page-input {
         width: 250px;
       }

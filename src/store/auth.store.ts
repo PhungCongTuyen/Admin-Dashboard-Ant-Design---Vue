@@ -1,12 +1,11 @@
 import {ActionContext} from "vuex";
-import {State} from "@/store/index";
 
 export interface AuthState {
     token: string | null,
     username: string | null
 }
 
-const authStore = {
+export default {
     state: {
         username: null,
         token: null
@@ -20,15 +19,10 @@ const authStore = {
         }
     },
     actions: {
-        setToken(context: ActionContext<AuthState, State>, payload: AuthState) {
+        setToken(context: ActionContext<AuthState, AuthState>, payload: AuthState) {
             context.commit('initToken', payload)
             console.log(payload);
         }
-        // incrementIfOddOnRootSum ({ state, commit, rootState }) {
-        //     if ((state.count + rootState.count) % 2 === 1) {
-        //         commit('increment')
-        //     }
-        // }
     },
     getters: {
         userInfo(state: AuthState) {
@@ -39,5 +33,3 @@ const authStore = {
         }
     }
 }
-
-export default authStore;

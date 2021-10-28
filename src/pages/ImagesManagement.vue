@@ -2,151 +2,185 @@
   <div class="images-management-container">
     <div class="images-management-options-bar">
       <span class="images-management-options-label">Filter:</span>
-      <a-select :default-value="value" style="width: 120px" @change="handleChangeFilter">
-        <a-select-option value="pending">
-          Pending
-        </a-select-option>
-        <a-select-option value="approved">
-          Approved
-        </a-select-option>
-        <a-select-option value="rejected">
-          Rejected
-        </a-select-option>
-        <a-select-option value="deleted">
-          Deleted
-        </a-select-option>
-      </a-select>
+      <a-select
+          v-model:value="select"
+          style="width: 120px"
+          :options="filterOptions"
+          @change="handleChangeFilter"
+      />
     </div>
-    <a-table :columns="columns" :data-source="dataTable" :scroll="{ x: 1700, y: 'calc(100vh - 350px)' }" bordered
-             @change="onTableSort"
-             :pagination="{current, total, pageSize, onChange}">
-      <div slot="action" slot-scope="text, record, index">
-        <a-button v-if="record.status === 'pending'" @click="showConfirm('approve', record, index)"
-                  :style="{marginRight: '10px'}" type="primary">Approve
-        </a-button>
-        <a-button v-if="record.status === 'pending'" @click="showConfirm('reject', record, index)"
-                  :style="{marginRight: '10px'}" type="danger" ghost>Reject
-        </a-button>
-        <a-button @click="showConfirm('delete', record, index)" type="danger">Delete</a-button>
-      </div>
+    <a-table
+        :columns="columns"
+        :data-source="dataTable"
+        :scroll="{ x: 1700, y: 'calc(100vh - 350px)' }"
+        bordered
+        @change="handleTableChange"
+        :pagination="pagination"
+    >
+      <template #no="{ index }">
+        <span>{{ (pagination.current - 1) * pagination.pageSize + index + 1 }}</span>
+      </template>
+      <template #thumbnail="{ record }">
+        <a-image :src="record.url || 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png'"
+                 :width="100"/>
+      </template>
+      <template #actions="{ record }">
+          <span>
+            <a-button v-if="record.status === 'pending'" @click="showConfirm('approve', record, index)"
+                      :style="{marginRight: '10px'}" type="primary">Approve
+            </a-button>
+            <a-button v-if="record.status === 'pending'" @click="showConfirm('reject', record, index)"
+                      :style="{marginRight: '10px'}" danger ghost>Reject
+            </a-button>
+            <a-button v-if="record.status !== 'deleted'" @click="showConfirm('delete', record, index)" danger
+                      type="primary">Delete</a-button>
+          </span>
+      </template>
     </a-table>
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import {Modal} from 'ant-design-vue';
+import {defineComponent, ref, computed} from "vue";
+import {TableState, TableStateFilters} from 'ant-design-vue/es/table/interface';
 
-export default {
-  name: "ImagesManagement",
-  computed: {
-    columns() {
-      const columns = [
-        {
-          title: 'No.',
-          key: 'index',
-          align: 'center',
-          width: 50,
-          customRender: (text, record, index) => {
-            return (this.current - 1) * this.pageSize + index + 1;
-          }
-        },
-        {
-          title: 'Thumbnail',
-          key: 'url',
-          align: 'center',
-          width: 150,
-          // customRender: (text, record, index) => {
-          //   return index + 1;
-          // }
-        },
-        {
-          title: "Likes",
-          key: 'likes',
-          align: 'center',
-          width: 100,
-          sorter: true,
-          sortDirections: ['ascend', 'descend']
-        },
-        {
-          title: "Owner's Email",
-          key: 'email',
-          align: 'center',
-          width: 200,
-        },
-        {
-          title: "Status",
-          key: 'status',
-          dataIndex: 'status',
-          align: 'center',
-          width: 100,
-        },
-        {
-          title: "Publish Time",
-          key: 'time',
-          align: 'center',
-          width: 150,
-          sorter: true,
-          sortDirections: ['ascend', 'descend']
-        },
-        {
-          title: "Updated by",
-          key: 'updatedBy',
-          align: 'center',
-          width: 150,
-        },
-        {
-          title: "Actions",
-          key: 'action',
-          align: 'center',
-          width: 200,
-          scopedSlots: {customRender: 'action'}
-        },
-      ];
-      return columns;
-    }
+type Pagination = TableState['pagination'];
+
+interface DataTable {
+  key?: number | string,
+  url?: string,
+  likes?: number,
+  email?: string,
+  status?: string,
+  time?: string,
+  updatedBy?: string
+}
+
+interface RawData {
+  url?: string,
+  likes?: number,
+  email?: string,
+  status?: string,
+  time?: string,
+  updatedBy?: string
+}
+
+
+const columns = [
+  {
+    title: 'No.',
+    key: 'no',
+    align: 'center',
+    width: 50,
+    slots: {customRender: 'no'},
   },
-  mounted() {
-    this.dataTable = this.rawData.map((prev, index) => {
+  {
+    title: 'Thumbnail',
+    key: 'thumbnail',
+    dataIndex: 'url',
+    align: 'center',
+    width: 150,
+    slots: {customRender: 'thumbnail'},
+  },
+  {
+    title: "Likes",
+    key: 'likes',
+    align: 'center',
+    width: 100,
+    sorter: true,
+    sortDirections: ['ascend', 'descend']
+  },
+  {
+    title: "Owner's Email",
+    key: 'email',
+    align: 'center',
+    width: 200,
+  },
+  {
+    title: "Status",
+    key: 'status',
+    dataIndex: 'status',
+    align: 'center',
+    width: 100,
+  },
+  {
+    title: "Publish Time",
+    key: 'time',
+    align: 'center',
+    width: 150,
+    sorter: true,
+    sortDirections: ['ascend', 'descend']
+  },
+  {
+    title: "Updated by",
+    key: 'updatedBy',
+    align: 'center',
+    width: 150,
+  },
+  {
+    title: "Actions",
+    key: 'actions',
+    dataIndex: 'actions',
+    align: 'center',
+    width: 200,
+    slots: {customRender: 'actions'},
+  },
+]
+
+const filterOptions = [
+  {
+    value: '',
+    label: 'None',
+  },
+  {
+    value: 'pending',
+    label: 'Pending',
+  },
+  {
+    value: 'approved',
+    label: 'Approved',
+  },
+  {
+    value: 'rejected',
+    label: 'Rejected',
+  },
+  {
+    value: 'deleted',
+    label: 'Deleted',
+  },
+];
+
+export default defineComponent({
+  name: "ImagesManagement",
+  setup() {
+    /* ----------------------- variables -------------------------*/
+    const rawData = [{status: 'pending', url: ''}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
+    const dataTable = rawData.map((prev: RawData, index: number) => {
       return {
         ...prev,
         key: index
       }
-    })
-  },
-  updated() {
+    });
+    const select = ref<string>("");
+    const current = ref<number | undefined>(1);
+    const pageSize = 20;
+    const total = ref(dataTable.length);
+    /* ------------------------- functions ----------------------*/
+    const pagination = computed(() => ({
+      total: total.value,
+      current: current.value,
+      pageSize: pageSize,
+    }));
 
-  },
-  data() {
-    const rawData = [{status: 'pending'}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
-    const dataTable = [];
-    return {
-      current: 1,
-      total: dataTable?.length,
-      pageSize: 12,
-      rawData,
-      dataTable,
-      value: "pending",
-    }
-  },
-  methods: {
-    renderModalIcon(type) {
-      switch (type) {
-        case 'approve':
-          return <a-icon type="check-circle" theme="twoTone" two-tone-color="#52c41a"/>
-        case 'reject':
-          return <a-icon type="minus-circle" theme="twoTone" two-tone-color="#eb2f96"/>
-        case 'delete':
-          return <a-icon type="close-circle" theme="twoTone" two-tone-color="#eb4034"/>
-        default:
-          return null
-      }
-    },
-    handleChangeFilter(value) {
-      this.value = value
-    },
-    showConfirm(type, data, index) {
-      this.$confirm({
-        icon: () => this.renderModalIcon(type),
-        title: `Do you want to ${type} this item?`,
+    const handleChangeFilter = (value: string) => {
+      select.value = value;
+      console.log(value);
+    };
+
+    const showConfirm = (type: string, data: DataTable, index: number) => {
+      Modal.confirm({
+        title: `Do you want to ${type} this image?`,
         content: 'When clicked the OK button, this dialog will be closed after 1 second',
         onOk() {
           console.log(type);
@@ -156,18 +190,32 @@ export default {
         onCancel() {
         },
       })
-    },
-    onChange(selectedPage) {
-      this.current = selectedPage
-    },
-    onTableSort(props, _, sort) {
-      console.log(sort);
-    },
-    handleSort(type, sort) {
-      console.log(type, sort)
+    };
+
+    const handleTableChange = (page: Pagination, filters: TableStateFilters, sorter: any) => {
+      current.value = page?.current
+      console.log("page", page?.current);
+      console.log("filters", filters);
+      console.log("sorter", sorter);
     }
-  }
-}
+
+    /*---------------------------- hooks --------------------------*/
+    return {
+      filterOptions,
+      dataTable,
+      select,
+      columns,
+      pagination,
+      total,
+      current,
+      pageSize,
+      handleChangeFilter,
+      showConfirm,
+      handleTableChange
+    }
+  },
+  methods: {}
+})
 </script>
 
 <style scoped lang="scss">

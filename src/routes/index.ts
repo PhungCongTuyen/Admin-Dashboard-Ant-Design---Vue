@@ -1,12 +1,7 @@
-import Vue from 'vue';
-import VueRouter from 'vue-router';
-import store from "@/store";
+import {createRouter, createWebHistory } from 'vue-router';
 
-Vue.use(VueRouter);
-
-const router = new VueRouter({
-    mode: 'history',
-    base: process.env.BASE_URL,
+const router = createRouter({
+    history: createWebHistory (),
     routes: [
         {
             path: '/sign-in',
@@ -19,7 +14,7 @@ const router = new VueRouter({
         },
         {
             // will match everything
-            path: '*',
+            path: '/:pathMatch(.*)*',
             name: 'Not Found',
             meta: {
                 requiresAuth: true,
@@ -47,6 +42,16 @@ const router = new VueRouter({
             component: () => import('../pages/ImagesManagement.vue')
         },
         {
+            path: '/awards-management',
+            name: 'Awards Management',
+            meta: {
+                requiresAuth: true,
+                isAdmin: true,
+                layout: 'dashboard',
+            },
+            component: () => import('../pages/AwardsManagement.vue')
+        },
+        {
             path: '/award-settings',
             name: 'Award Settings',
             meta: {
@@ -57,14 +62,14 @@ const router = new VueRouter({
             component: () => import('../pages/AwardSettings.vue')
         },
         {
-            path: '/account-managment',
+            path: '/account-management',
             name: 'Account Management',
             meta: {
                 requiresAuth: true,
                 isAdmin: true,
                 layout: 'dashboard',
             },
-            component: () => import('../pages/ImagesManagement.vue')
+            component: () => import('../pages/AccountManagement.vue')
         },
         {
             path: '/logs',
@@ -85,10 +90,9 @@ router.beforeEach((to, from, next) => {
         console.log(isAuthenticated, to.path);
         next({path: '/sign-in'})
     }
-    if (isAuthenticated && to.path === '/sign-in') {
-        next({path: '/'})
-    }
-    else if (to.matched.some((record) => record.meta.requiresAuth)) {
+    if (isAuthenticated && to.path === '/sign-in' || isAuthenticated && to.path === '/') {
+        next({path: '/images-management'})
+    } else if (to.matched.some((record) => record.meta.requiresAuth)) {
         if (!isAuthenticated) {
             next({path: '/sign-in'})
         } else if (to.matched.some(record => record.meta.isAdmin)) {

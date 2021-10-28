@@ -1,63 +1,82 @@
 <template>
   <div class="logs-container">
-    <a-table :columns="columns" :data-source="dataTable" :scroll="{ x: 1366, y: 'calc(100vh - 350px)' }" bordered size="small"
-             @change="onTableSort"
-             :pagination="{current, total, pageSize, onChange}">
+    <a-table
+        :columns="columns"
+        :data-source="dataTable"
+        :scroll="{ x: 1366, y: 'calc(100vh - 350px)' }"
+        bordered
+        size="small"
+        @change="handleTableChange"
+        :pagination="pagination">
+      <template #no="{ index }">
+        <span>{{ (pagination.current - 1) * pagination.pageSize + index + 1 }}</span>
+      </template>
     </a-table>
   </div>
 </template>
 
-<script>
-export default {
-  name: "Logs",
-  computed: {
-    columns() {
-      return [
-        {
-          title: 'No.',
-          key: 'index',
-          align: 'center',
-          width: 100,
-          customRender: (text, record, index) => {
-            return index + 1;
-          }
-        },
-        {
-          title: 'Time',
-          key: 'time',
-          align: 'center',
-          width: 300,
-          sorter: true,
-        },
-        {
-          title: "Actions",
-          key: 'action',
-          align: 'center',
-        },
-      ];
-    }
+<script lang="ts">
+import {computed, defineComponent, ref} from "vue";
+import {TableState, TableStateFilters} from 'ant-design-vue/es/table/interface';
+
+type Pagination = TableState['pagination'];
+
+const columns = [
+  {
+    title: 'No.',
+    key: 'no',
+    align: 'center',
+    width: 100,
+    slots: {customRender: 'no'}
   },
-  mounted() {
-    this.dataTable = this.rawData.map((prev, index) => {
+  {
+    title: 'Time',
+    key: 'time',
+    align: 'center',
+    width: 300,
+    sorter: true,
+  },
+  {
+    title: "Actions",
+    key: 'actions',
+    align: 'center',
+  },
+];
+
+export default defineComponent({
+  name: "Logs",
+  setup() {
+    const rawData = [{status: 'pending'}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
+    const dataTable = rawData.map((prev, index) => {
       return {
         ...prev,
         key: index
       }
-    })
-  },
-  updated() {
+    });
+    const current = ref<number | undefined>(1);
+    const pageSize = 5;
+    const total = ref(dataTable.length);
+    /*------------------------------- functions -----------------------------*/
 
-  },
-  data() {
-    const rawData = [{status: 'pending'}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
-    const dataTable = [];
+    const pagination = computed(() => ({
+      total: total.value,
+      current: current.value,
+      pageSize: pageSize,
+    }));
+
+    const handleTableChange = (page: Pagination, filters: TableStateFilters, sorter: any) => {
+      current.value = page?.current
+      console.log("page", page?.current);
+      console.log("filters", filters);
+      console.log("sorter", sorter);
+    }
+
+    /*------------------------------- hooks -----------------------------*/
     return {
-      current: 1,
-      total: dataTable?.length,
-      pageSize:12,
-      rawData,
+      columns,
       dataTable,
-      value: "pending",
+      pagination,
+      handleTableChange
     }
   },
   methods: {
@@ -71,7 +90,7 @@ export default {
       console.log(type, sort)
     }
   }
-}
+})
 </script>
 
 <style scoped lang="scss">
