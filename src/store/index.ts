@@ -1,4 +1,4 @@
-import { createStore } from 'vuex';
+import { createStore } from "vuex";
 import authStore, {AuthState} from "./auth.store";
 
 export interface State {
@@ -6,8 +6,8 @@ export interface State {
 }
 
 const store = createStore({
-    modules: {
-        auth: authStore,
-    }
-})
+  modules: {
+    auth: authStore,
+  }
+});
 export default store;
