@@ -2,18 +2,18 @@ import {ActionContext} from "vuex";
 
 export interface AuthState {
     token: string | null,
-    username: string | null
+    email: string | null
 }
 
 export default {
   state: {
-    username: null,
+    email: null,
     token: null
   },
   mutations: {
     initToken(state: AuthState, payload: AuthState) {
       state.token = payload.token;
-      state.username = payload.username;
+      state.email = payload.email;
       console.log(payload);
       console.log(state, "state-log");
     }
@@ -27,7 +27,7 @@ export default {
   getters: {
     userInfo(state: AuthState) {
       return {
-        username: state.username,
+        email: state.email,
         token: state.token
       };
     }

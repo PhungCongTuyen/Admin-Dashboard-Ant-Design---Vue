@@ -104,7 +104,15 @@ const columns = [
     width: 100,
   },
   {
-    title: "Publish Time",
+    title: "Created At",
+    key: "created",
+    align: "center",
+    width: 150,
+    sorter: true,
+    sortDirections: ["ascend", "descend"]
+  },
+  {
+    title: "Last Modified At",
     key: "time",
     align: "center",
     width: 150,

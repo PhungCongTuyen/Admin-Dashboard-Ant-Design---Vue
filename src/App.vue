@@ -10,6 +10,7 @@
 export default ({
   name: "App",
   computed: {
+
     layout() {
       if (!this.$route.meta.layout) {
         return "layout-default";

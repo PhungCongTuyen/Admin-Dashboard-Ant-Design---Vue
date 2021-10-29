@@ -28,7 +28,7 @@
           </a-menu-item>
         </a-sub-menu>
         <a-menu-item key="/account-management" @click="handleRouting('/account-management')">
-          <user-outlined/>
+          <user-outlined/> 
           <span>Account Management</span>
         </a-menu-item>
         <a-menu-item key="/logs" @click="handleRouting('/logs')">
@@ -72,8 +72,8 @@
 
 <script lang="ts">
 import {defineComponent, ref} from "vue";
-import {useRouter} from 'vue-router';
-import {useStore} from 'vuex';
+import {useRouter} from "vue-router";
+import {useStore} from "vuex";
 
 
 export default defineComponent({
@@ -83,16 +83,16 @@ export default defineComponent({
     const store = useStore();
     const username = store.getters.userInfo.username;
     const collapsed = ref(false);
-    const route = ref(window.location.href.split('/'));
-    const href = ref(['/' + route.value[3]]);
+    const route = ref(window.location.href.split("/"));
+    const href = ref(["/" + route.value[3]]);
     /*----------------------- functions ---------------------------*/
     const handleLogOut = () => {
-      localStorage.removeItem('token')
-      router.push('/sign-in')
+      localStorage.removeItem("token");
+      router.push("/sign-in");
     };
     const handleRouting = (value: string) => {
-      router.push(value)
-      href.value = [value]
+      router.push(value);
+      href.value = [value];
     };
     /*------------------------- hooks -----------------------------*/
 
@@ -102,9 +102,9 @@ export default defineComponent({
       href,
       handleLogOut,
       handleRouting
-    }
+    };
   },
-})
+});
 
 </script>
 

@@ -20,6 +20,8 @@
 import { useRouter } from "vue-router";
 import { useStore } from "vuex";
 import {defineComponent, ref} from "vue";
+import { logIn } from "@/services/apis/auth.api";
+import { message } from "ant-design-vue";
 
 export default defineComponent({
   setup() {
@@ -31,10 +33,15 @@ export default defineComponent({
 
     const signIn = () => {
       loading.value = true;
-      store.dispatch("setToken", {token: "ádasdasda", username: email.value});
-      localStorage.setItem("token", store.getters.userInfo.token);
-      console.log(email.value, password.value); 
-      router.push("/images-management");
+      logIn({email: email.value, password: password.value}).then((res) => {
+        store.dispatch("setToken", {token: res.token, email: res.email});
+        localStorage.setItem("token", res.token);
+        router.push("/images-management");
+        loading.value = false;
+      }).catch((e) => {
+        message.error(e);
+        loading.value = false;
+      });
     };
 
     return {
