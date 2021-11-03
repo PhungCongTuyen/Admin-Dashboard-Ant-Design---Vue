@@ -1,35 +1,43 @@
-import {ActionContext} from "vuex";
+import { ActionContext } from "vuex";
 
 export interface AuthState {
-    token: string | null,
-    email: string | null
+    token: string | null;
+    email: string | null;
+    id: string | null;
+    role: string | null;
 }
 
 export default {
-  state: {
-    email: null,
-    token: null
-  },
-  mutations: {
-    initToken(state: AuthState, payload: AuthState) {
-      state.token = payload.token;
-      state.email = payload.email;
-      console.log(payload);
-      console.log(state, "state-log");
-    }
-  },
-  actions: {
-    setToken(context: ActionContext<AuthState, AuthState>, payload: AuthState) {
-      context.commit("initToken", payload);
-      console.log(payload);
-    }
-  },
-  getters: {
-    userInfo(state: AuthState) {
-      return {
-        email: state.email,
-        token: state.token
-      };
-    }
-  }
+    state: {
+        email: null,
+        token: null,
+        id: null,
+        role: null,
+    },
+    mutations: {
+        initUserInfo(state: AuthState, payload: AuthState) {
+            state.token = payload.token;
+            state.email = payload.email;
+            state.id = payload.id;
+            state.role = payload.role;
+        },
+    },
+    actions: {
+        setUserInfo(
+            context: ActionContext<AuthState, AuthState>,
+            payload: AuthState
+        ) {
+            context.commit("initUserInfo", payload);
+        },
+    },
+    getters: {
+        userInfo(state: AuthState) {
+            return {
+                email: state.email,
+                token: state.token,
+                id: state.id,
+                role: state.role,
+            };
+        },
+    },
 };

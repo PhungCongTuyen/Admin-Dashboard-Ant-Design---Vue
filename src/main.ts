@@ -1,23 +1,39 @@
-import {createApp} from "vue";
+import { createApp } from "vue";
 import App from "./App.vue";
 import router from "@/routes";
 import store from "@/store/index";
-import {Input, Button, Layout, Menu, Table, Select, Modal, Upload, Row, Col, Image, Dropdown} from "ant-design-vue";
+import {
+    Input,
+    Button,
+    Layout,
+    Menu,
+    Table,
+    Select,
+    Modal,
+    Upload,
+    Row,
+    Col,
+    Image,
+    Dropdown,
+    Form,
+    Result,
+} from "ant-design-vue";
 import "ant-design-vue/dist/antd.css";
 import "./assets/style.module..scss";
 import {
-  FileDoneOutlined,
-  HomeOutlined,
-  PictureOutlined,
-  GiftOutlined,
-  SettingOutlined,
-  UserOutlined,
-  DatabaseOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  PlusOutlined,
-  PlusCircleOutlined,
-  LogoutOutlined, SearchOutlined
+    FileDoneOutlined,
+    HomeOutlined,
+    PictureOutlined,
+    GiftOutlined,
+    SettingOutlined,
+    UserOutlined,
+    DatabaseOutlined,
+    MenuFoldOutlined,
+    MenuUnfoldOutlined,
+    PlusOutlined,
+    PlusCircleOutlined,
+    LogoutOutlined,
+    SearchOutlined,
 } from "@ant-design/icons-vue";
 
 import DashboardLayout from "./layouts/DashboardLayout.vue";
@@ -55,7 +71,9 @@ app.use(Modal);
 app.use(Upload);
 app.use(Row);
 app.use(Col);
+app.use(Result);
 app.use(Image);
 app.use(Dropdown);
+app.use(Form);
 
 app.mount("#app");

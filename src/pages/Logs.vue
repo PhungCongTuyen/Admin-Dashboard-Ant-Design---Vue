@@ -22,63 +22,63 @@ import {TableState, TableStateFilters} from "ant-design-vue/es/table/interface";
 type Pagination = TableState["pagination"];
 
 const columns = [
-  {
-    title: "No.",
-    key: "no",
-    align: "center",
-    width: 100,
-    slots: {customRender: "no"}
-  },
-  {
-    title: "Time",
-    key: "time",
-    align: "center",
-    width: 300,
-    sorter: true,
-  },
-  {
-    title: "Actions",
-    key: "actions",
-    align: "center",
-  },
-];
+    {
+        title: "No.",
+        key: "no",
+        align: "center",
+        width: 100,
+        slots: {customRender: "no"}
+    },
+    {
+        title: "Time",
+        key: "time",
+        align: "center",
+        width: 300,
+        sorter: true,
+    },
+    {
+        title: "Actions",
+        key: "actions",
+        align: "center",
+    },
+]; 
 
 export default defineComponent({
-  name: "Logs",
-  setup() {
-    const rawData = [{status: "pending"}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
-    const dataTable = rawData.map((prev, index) => {
-      return {
-        ...prev,
-        key: index
-      };
-    });
-    const current = ref<number | undefined>(1);
-    const pageSize = 5;
-    const total = ref(dataTable.length);
-    /*------------------------------- functions -----------------------------*/
+    name: "Logs",
+    setup() {
+        const rawData = [{status: "pending"}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
+        const dataTable = rawData.map((prev, index) => {
+            return {
+                ...prev,
+                key: index
+            };
+        });
+        const current = ref<number | undefined>(1);
+        const pageSize = 5;
+        const total = ref(dataTable.length);
+        /*------------------------------- functions -----------------------------*/
 
-    const pagination = computed(() => ({
-      total: total.value,
-      current: current.value,
-      pageSize: pageSize,
-    }));
+        const pagination = computed(() => ({
+            total: total.value,
+            current: current.value,
+            pageSize: pageSize,
+        }));
 
-    const handleTableChange = (page: Pagination, filters: TableStateFilters, sorter: any) => {
-      current.value = page?.current;
-      console.log("page", page?.current);
-      console.log("filters", filters);
-      console.log("sorter", sorter);
-    };
+        const handleTableChange = (page: Pagination, filters: TableStateFilters, sorter: any) => {
+            current.value = page?.current;
+            console.log("page", page?.current);
+            console.log("filters", filters);
+            console.log("sorter", sorter);
+        };
 
-    /*------------------------------- hooks -----------------------------*/
-    return {
-      columns,
-      dataTable,
-      pagination,
-      handleTableChange
-    };
-  }
+        /*------------------------------- hooks -----------------------------*/
+        return {
+            columns,
+            dataTable,
+            pagination,
+            handleTableChange
+        };
+    }
 });
 </script>
 

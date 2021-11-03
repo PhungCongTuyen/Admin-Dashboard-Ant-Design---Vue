@@ -85,7 +85,7 @@
         <plus-circle-outlined/>
         Create New Award
       </a-button>
-    </div>
+    </div> 
     <a-table
         :columns="columns"
         :data-source="dataTable"
@@ -125,8 +125,8 @@ import debounce from "lodash/debounce";
 import {Modal, message} from "ant-design-vue";
 import {defineComponent, watch, ref, computed} from "vue";
 import {
-  TableState,
-  TableStateFilters,
+    TableState,
+    TableStateFilters,
 } from "ant-design-vue/es/table/interface";
 
 type Pagination = TableState["pagination"];
@@ -160,190 +160,190 @@ interface RawData {
 // }
 
 const columns = [
-  {
-    title: "No.",
-    key: "index",
-    align: "center",
-    width: 30,
-    slots: {customRender: "no"},
-  },
-  {
-    title: "Award's Name",
-    key: "name",
-    dataIndex: "name",
-    align: "center",
-    width: 100
-  },
-  {
-    title: "Award's Description",
-    key: "description",
-    dataIndex: "description",
-    align: "center",
-    width: 200,
-  },
-  {
-    title: "Award's Icon",
-    key: "icon",
-    align: "center",
-    width: 100,
-  },
-  {
-    title: "Actions",
-    key: "actions",
-    align: "center",
-    width: 70,
-    slots: {customRender: "actions"},
-  },
+    {
+        title: "No.",
+        key: "index",
+        align: "center",
+        width: 30,
+        slots: {customRender: "no"},
+    },
+    {
+        title: "Award's Name",
+        key: "name",
+        dataIndex: "name",
+        align: "center",
+        width: 100
+    },
+    {
+        title: "Award's Description",
+        key: "description",
+        dataIndex: "description",
+        align: "center",
+        width: 200,
+    },
+    {
+        title: "Award's Icon",
+        key: "icon",
+        align: "center",
+        width: 100,
+    },
+    {
+        title: "Actions",
+        key: "actions",
+        align: "center",
+        width: 70,
+        slots: {customRender: "actions"},
+    },
 ];
 
 export default defineComponent({
-  name: "AwardSettings",
-  setup() {
+    name: "AwardSettings",
+    setup() {
     /*--------------------------- variables ---------------------------*/
-    const rawData = [
-      {name: "pending", description: "abciasjdoijaojasd"},
-      {
-        name: "penádasdasdasdasdding",
-        description: "abciasjdoádasdasdasdasdaijaojasd",
-      },
-    ];
-    const dataTable = rawData.map((prev: RawData, index: number) => {
-      return {
-        ...prev,
-        key: index,
-      };
-    });
+        const rawData = [
+            {name: "pending", description: "abciasjdoijaojasd"},
+            {
+                name: "penádasdasdasdasdding",
+                description: "abciasjdoádasdasdasdasdaijaojasd",
+            },
+        ];
+        const dataTable = rawData.map((prev: RawData, index: number) => {
+            return {
+                ...prev,
+                key: index,
+            };
+        });
 
-    const searchInput = ref<string>("");
-    const awardName = ref<string>("");
-    const awardDescription = ref<string>("");
-    const typeModal = ref<string>("");
-    const current = ref<number | undefined>(1);
-    const pageSize = 20;
-    const total = ref(dataTable.length);
-    const titleOfModal = ref("Create New Award");
-    const showModal = ref(false);
-    const confirmLoading = ref(false);
-    const imageURL = ref<string | null | ArrayBuffer>("");
-    const fileList = ref([]);
+        const searchInput = ref<string>("");
+        const awardName = ref<string>("");
+        const awardDescription = ref<string>("");
+        const typeModal = ref<string>("");
+        const current = ref<number | undefined>(1);
+        const pageSize = 20;
+        const total = ref(dataTable.length);
+        const titleOfModal = ref("Create New Award");
+        const showModal = ref(false);
+        const confirmLoading = ref(false);
+        const imageURL = ref<string | null | ArrayBuffer>("");
+        const fileList = ref([]);
 
-    /*--------------------------- functions ---------------------------*/
-    const pagination = computed(() => ({
-      total: total.value,
-      current: current.value,
-      pageSize: pageSize,
-    }));
+        /*--------------------------- functions ---------------------------*/
+        const pagination = computed(() => ({
+            total: total.value,
+            current: current.value,
+            pageSize: pageSize,
+        }));
 
-    const onSearch = debounce((e) => console.log(e, "300 down"), 300);
+        const onSearch = debounce((e) => console.log(e, "300 down"), 300);
 
-    const handleTableChange = (
-      page: Pagination,
-      filters: TableStateFilters,
-      sorter: any
-    ) => {
-      current.value = page?.current;
-      console.log("page", page?.current);
-      console.log("filters", filters);
-      console.log("sorter", sorter);
-    };
+        const handleTableChange = (
+            page: Pagination,
+            filters: TableStateFilters,
+            sorter: any
+        ) => {
+            current.value = page?.current;
+            console.log("page", page?.current);
+            console.log("filters", filters);
+            console.log("sorter", sorter);
+        };
 
-    const onOpenModal = (
-      type: string,
-      title: string,
-      record?: any,
-      index?: number
-    ) => {
-      titleOfModal.value = title;
-      typeModal.value = type;
-      showModal.value = true;
-      if (type === "edit") {
-        awardName.value = record.name;
-        awardDescription.value = record.description;
-      } else {
-        awardName.value = "";
-        awardDescription.value = "";
-      }
-      console.log(record, index);
-    };
+        const onOpenModal = (
+            type: string,
+            title: string,
+            record?: any,
+            index?: number
+        ) => {
+            titleOfModal.value = title;
+            typeModal.value = type;
+            showModal.value = true;
+            if (type === "edit") {
+                awardName.value = record.name;
+                awardDescription.value = record.description;
+            } else {
+                awardName.value = "";
+                awardDescription.value = "";
+            }
+            console.log(record, index);
+        };
 
-    const onDeleteRow = (record: any, index: number) => {
-      Modal.confirm({
-        title: "Do you want to delete this award?",
-        content:
+        const onDeleteRow = (record: any, index: number) => {
+            Modal.confirm({
+                title: "Do you want to delete this award?",
+                content:
             "When clicked the OK button, this dialog will be closed after 1 second",
-        onOk() {
-          console.log("data", record);
-          console.log("index", index);
-        },
-        onCancel() {
-        },
-      });
-    };
+                onOk() {
+                    console.log("data", record);
+                    console.log("index", index);
+                },
+                onCancel() {
+                },
+            });
+        };
 
-    const handleResetModal = () => {
-      fileList.value = [];
-      imageURL.value = "";
-    };
+        const handleResetModal = () => {
+            fileList.value = [];
+            imageURL.value = "";
+        };
 
-    const handleOk = () => {
-      showModal.value = false;
-      console.log(awardName.value);
-      console.log(awardDescription.value);
-    };
+        const handleOk = () => {
+            showModal.value = false;
+            console.log(awardName.value);
+            console.log(awardDescription.value);
+        };
 
-    const handleCancel = () => {
-      showModal.value = false;
-    };
-    // functions for upload image
-    const handleUploadImage = (e: FileInfo) => {
-      console.log(e);
-      if (e.file.type !== "image/jpeg" && e.file.type !== "image/png") return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        imageURL.value = reader.result;
-      };
-      reader.readAsDataURL(e.file.originFileObj);
-    };
+        const handleCancel = () => {
+            showModal.value = false;
+        };
+        // functions for upload image
+        const handleUploadImage = (e: FileInfo) => {
+            console.log(e);
+            if (e.file.type !== "image/jpeg" && e.file.type !== "image/png") return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                imageURL.value = reader.result;
+            };
+            reader.readAsDataURL(e.file.originFileObj);
+        };
 
-    const beforeUpload = (file: FileItem) => {
-      const isJpgOrPng =
+        const beforeUpload = (file: FileItem) => {
+            const isJpgOrPng =
           file.type === "image/jpeg" || file.type === "image/png";
-      if (!isJpgOrPng) {
-        message.error("You can only upload JPG or PNG file!");
-      }
-      const isLt2M = file.size / 1024 / 1024 < 2;
-      if (!isLt2M) {
-        message.error("Image must smaller than 2MB!");
-      }
-      return isJpgOrPng && isLt2M;
-    };
+            if (!isJpgOrPng) {
+                message.error("You can only upload JPG or PNG file!");
+            }
+            const isLt2M = file.size / 1024 / 1024 < 2;
+            if (!isLt2M) {
+                message.error("Image must smaller than 2MB!");
+            }
+            return isJpgOrPng && isLt2M;
+        };
 
-    /*--------------------------- hooks ---------------------------*/
-    watch(searchInput, onSearch);
-    // watch(current, console.log('call api with current', current));
+        /*--------------------------- hooks ---------------------------*/
+        watch(searchInput, onSearch);
+        // watch(current, console.log('call api with current', current));
 
-    return {
-      searchInput,
-      dataTable,
-      titleOfModal,
-      showModal,
-      confirmLoading,
-      imageURL,
-      fileList,
-      awardName,
-      awardDescription,
-      columns,
-      pagination,
-      handleTableChange,
-      onDeleteRow,
-      onOpenModal,
-      handleResetModal,
-      handleOk,
-      handleUploadImage,
-      beforeUpload,
-      handleCancel,
-    };
-  },
+        return {
+            searchInput,
+            dataTable,
+            titleOfModal,
+            showModal,
+            confirmLoading,
+            imageURL,
+            fileList,
+            awardName,
+            awardDescription,
+            columns,
+            pagination,
+            handleTableChange,
+            onDeleteRow,
+            onOpenModal,
+            handleResetModal,
+            handleOk,
+            handleUploadImage,
+            beforeUpload,
+            handleCancel,
+        };
+    },
 });
 </script>
 

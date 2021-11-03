@@ -7,31 +7,31 @@
         <!--          <home-outlined/>-->
         <!--          <span>Home</span>-->
         <!--        </a-menu-item>-->
-        <a-menu-item key="/images-management" @click="handleRouting('/images-management')">
+        <a-menu-item key="/images-management" @click="handleRouting('/images-management')" v-if="['admin', 'moderator'].includes(role)">
           <picture-outlined/>
           <span>Images Management</span>
         </a-menu-item>
-        <a-sub-menu key="sub1">
+        <a-sub-menu key="sub1" v-if="role === 'admin'">
           <template #title>
             <span>
               <gift-outlined/>
               <span>Award</span>
             </span>
           </template>
-          <a-menu-item key="/awards-management" @click="handleRouting('/awards-management')">
+          <a-menu-item key="/awards-management" @click="handleRouting('/awards-management')" v-if="role === 'admin'">
             <file-done-outlined/>
             <span>Management</span>
           </a-menu-item>
-          <a-menu-item key="/award-settings" @click="handleRouting('/award-settings')">
+          <a-menu-item key="/award-settings" @click="handleRouting('/award-settings')" v-if="role === 'admin'">
             <setting-outlined/>
             <span>Settings</span>
           </a-menu-item>
         </a-sub-menu>
-        <a-menu-item key="/account-management" @click="handleRouting('/account-management')">
+        <a-menu-item key="/account-management" @click="handleRouting('/account-management')" v-if="role === 'admin'">
           <user-outlined/> 
           <span>Account Management</span>
         </a-menu-item>
-        <a-menu-item key="/logs" @click="handleRouting('/logs')">
+        <a-menu-item key="/logs" @click="handleRouting('/logs')" v-if="role === 'admin'">
           <database-outlined/>
           <span>Logs</span>
         </a-menu-item>
@@ -71,39 +71,57 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, ref} from "vue";
+import {defineComponent, ref, onMounted} from "vue";
 import {useRouter} from "vue-router";
+import {getUserDetailApi} from "@/services/apis/user.api";
+import {message} from "ant-design-vue";
 import {useStore} from "vuex";
 
-
 export default defineComponent({
-  setup() {
+    setup() {
     /*----------------------- variables ---------------------------*/
-    const router = useRouter();
-    const store = useStore();
-    const username = store.getters.userInfo.username;
-    const collapsed = ref(false);
-    const route = ref(window.location.href.split("/"));
-    const href = ref(["/" + route.value[3]]);
-    /*----------------------- functions ---------------------------*/
-    const handleLogOut = () => {
-      localStorage.removeItem("token");
-      router.push("/sign-in");
-    };
-    const handleRouting = (value: string) => {
-      router.push(value);
-      href.value = [value];
-    };
-    /*------------------------- hooks -----------------------------*/
+        const router = useRouter();
+        const store = useStore();
+        const role = ref("");
+        const username = ref("");
+        const collapsed = ref(false);
+        const route = ref(window.location.href.split("/"));
+        const href = ref(["/" + route.value[3]]);
+        /*----------------------- functions ---------------------------*/
+        const handleLogOut = () => {
+            localStorage.removeItem("token");
+            localStorage.removeItem("role");
+            router.push("/login");
+        };
+        const handleRouting = (value: string) => {
+            router.push(value);
+            href.value = [value];
+        };
 
-    return {
-      username,
-      collapsed,
-      href,
-      handleLogOut,
-      handleRouting
-    };
-  },
+        const getUserDetail = () => {
+            getUserDetailApi().then((res) => {
+                username.value = res.data.email;
+                role.value = res.data.role;
+                localStorage.setItem("role", res.data.role);
+                store.dispatch("setUserInfo", {
+                    email: res.data.email,
+                    role: res.data.role,
+                    id: res.data.id,
+                });
+            }).catch((e) => message.error(e.response.message));
+        };
+
+        /*------------------------- hooks -----------------------------*/
+        onMounted(getUserDetail);
+        return {
+            username,
+            collapsed,
+            href, 
+            role,
+            handleLogOut,
+            handleRouting
+        };
+    },
 });
 
 </script>

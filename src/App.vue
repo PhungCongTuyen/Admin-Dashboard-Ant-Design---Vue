@@ -5,19 +5,30 @@
     </component>
   </div>
 </template>
-<script>
+<script lang="ts">
+import {defineComponent, ref, watch} from "vue";
+import {useRoute} from "vue-router";
 
-export default ({
-  name: "App",
-  computed: {
+export default defineComponent({
+    name: "App",
+    setup() {
+        const route = useRoute();
+        const layout = ref("layout-default");
+ 
+        const checkLayout = () => {
+            if (!route.meta.layout) {
+                layout.value = "layout-default";
+            } else {
+                layout.value = "layout-" + route.meta.layout;
+            }
+        };
 
-    layout() {
-      if (!this.$route.meta.layout) {
-        return "layout-default";
-      }
-      return "layout-" + this.$route.meta.layout;
+        watch(route, checkLayout);
+
+        return {
+            layout
+        };
     }
-  },
 });
 
 </script>
