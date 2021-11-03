@@ -38,8 +38,8 @@ export default defineComponent({
         localStorage.setItem("token", res.token);
         router.push("/images-management");
         loading.value = false;
-      }).catch((e) => {
-        message.error(e);
+      }).catch(() => {
+        message.error("Log In Failed!");
         loading.value = false;
       });
     };
