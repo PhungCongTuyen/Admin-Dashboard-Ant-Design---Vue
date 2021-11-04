@@ -17,6 +17,7 @@ import {
     Dropdown,
     Form,
     Result,
+    Checkbox,
 } from "ant-design-vue";
 import "ant-design-vue/dist/antd.css";
 import "./assets/style.module..scss";
@@ -75,5 +76,6 @@ app.use(Result);
 app.use(Image);
 app.use(Dropdown);
 app.use(Form);
+app.use(Checkbox);
 
 app.mount("#app");

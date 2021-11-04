@@ -22,6 +22,7 @@ import {useRouter} from "vue-router";
 import {defineComponent, ref} from "vue";
 import {logInApi} from "@/services/apis/auth.api";
 import {message} from "ant-design-vue";
+import {isValidEmail} from "@/utils/validator";
 
 export default defineComponent({
     setup() {
@@ -30,9 +31,7 @@ export default defineComponent({
         const loading = ref<boolean>(false);
         const router = useRouter();
 
-        const isValidEmail = (email: string) => {
-            return /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(email);
-        };
+
 
         const signIn = () => {
             if (!isValidEmail(email.value)) {
@@ -48,7 +47,13 @@ export default defineComponent({
             }).catch((e) => {
                 loading.value = false;
                 if (e.response) {
-                    message.error(e.response.data.message);
+                    message.error({
+                      content: e.response.data.message,
+                      // style: {
+                      //   right: "10px",
+                      //   textAlign: "right"
+                      // }
+                    });
                 }
             });
         };
