@@ -16,6 +16,7 @@ const ENDPOINTS = {
         `/image/${imageId}/unassign-award`,
     AWARD: "/award",
     AWARD_ACTIONS: (awardId: string) => `/award/${awardId}`,
+    LOGS: "/log",
 };
 
 export default ENDPOINTS;

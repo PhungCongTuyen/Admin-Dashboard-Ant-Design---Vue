@@ -106,6 +106,17 @@ interface RawData {
   deleted: boolean;
 }
 
+interface ConvertedRawData {
+  createdAt: string;
+  key: number;
+  email: string;
+  id: string;
+  password: string;
+  role: string;
+  updatedAt: string;
+  deleted: boolean;
+}
+
 const columns = [
   {
     title: "No.",
@@ -157,7 +168,7 @@ export default defineComponent({
     /*---------------------- variables ------------------------------*/
     //variables for display on table
     const rawData = ref<RawData[]>([]);
-    const dataTable = ref<RawData[]>([]);
+    const dataTable = ref<ConvertedRawData[]>([]);
 
     //variables for onChange in table
     const searchInput = ref<string>("");
@@ -165,8 +176,6 @@ export default defineComponent({
     const currentPage = ref<number | undefined>(1);
     const pageSize = 20;
     const totalItem = ref<number>(0);
-    const totalPage = ref<number>(0);
-
     //variables for modals
     const showModal = ref<boolean>(false);
     const titleOfModal = ref<string>("");
@@ -306,7 +315,6 @@ export default defineComponent({
         isLoading.value = false;
         rawData.value = res.data.data;
         totalItem.value = res.data.totalItem;
-        totalPage.value = res.data.totalPage;
       }).catch((e) => {
         isLoading.value = false;
         message.error(e.response.data.message);

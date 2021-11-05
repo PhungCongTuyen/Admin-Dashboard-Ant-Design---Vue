@@ -18,6 +18,7 @@ import {
     Form,
     Result,
     Checkbox,
+    DatePicker,
 } from "ant-design-vue";
 import "ant-design-vue/dist/antd.css";
 import "./assets/style.module..scss";
@@ -77,5 +78,6 @@ app.use(Image);
 app.use(Dropdown);
 app.use(Form);
 app.use(Checkbox);
+app.use(DatePicker);
 
 app.mount("#app");
