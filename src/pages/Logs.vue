@@ -2,7 +2,7 @@
   <div class="logs-container">
     <a-form autoComplete="false" class="logs-options-bar">
       <span>Search: </span>
-      <a-input placeholder="Email..." style="width: 200px" v-model:value="userEmail" :style="{marginLeft: '10px'}"
+      <a-input placeholder="Email" style="width: 200px" v-model:value="userEmail" :style="{marginLeft: '10px'}"
                autoComplete="off" name="search" :disabled="isLoading">
         <template #suffix>
           <search-outlined/>
@@ -14,6 +14,7 @@
                       v-model:value="date"
                       :format="dateFormat" :allowClear="false"
                       @change="handleChangeDate"
+                      :inputReadOnly="true"
       />
     </a-form>
     <a-table
@@ -22,15 +23,31 @@
         :scroll="{ x: 1920, y: 'calc(100vh - 350px)' }"
         bordered
         size="small"
+        class="ant-table-striped"
         @change="handleTableChange"
         :pagination="pagination"
         :loading="isLoading"
+        :rowClassName="(record) => {
+         if (['login', 'logout'].includes(record.action)) return 'table-striped';
+         if (record.action === 'reject') return 'table-striped-reject'
+         if (record.action === 'delete') return 'table-striped-delete'
+        }"
     >
       <template #image="{ record }">
         <a-image
             :src="record?.image?.link"
             :width="100"
-        />
+            :style="{minHeight: '100px'}"
+        >
+          <template #placeholder v-if="record.image?.link">
+            <a-image
+                :src="imageFallback"
+                :width="100"
+                :height="100"
+                :preview="false"
+            />
+          </template>
+        </a-image>
       </template>
       <template #no="{ index }">
         <span>{{ (pagination.current - 1) * pagination.pageSize + index + 1 }}</span>
@@ -55,6 +72,8 @@ import {TableState} from "ant-design-vue/es/table/interface";
 import {getListLogsApi} from "@/services/apis/logs.api";
 import {message} from "ant-design-vue";
 import debounce from "lodash/debounce";
+import FallbackConstants from "@/constants/fallback.constants";
+
 
 type Pagination = TableState["pagination"];
 
@@ -94,7 +113,6 @@ const columns = [
     dataIndex: ["user", "email"],
     align: "center",
     width: 200,
-    sorter: true,
   },
   {
     title: "Action",
@@ -179,6 +197,7 @@ export default defineComponent({
     const rawData = ref<RawData[]>([]);
     const dataTable = ref<ConvertedRawData[]>([]);
     const isLoading = ref<boolean>(false);
+    const imageFallback = FallbackConstants.IMAGE_FALLBACK;
 
     //variables for pagination
     const currentPage = ref<number | undefined>(1);
@@ -241,7 +260,7 @@ export default defineComponent({
         totalItem.value = res.data.totalItem;
       }).catch((e) => {
         isLoading.value = false;
-        message.error(e.response.data.message);
+        message.error(typeof e.response.data.message === "string" ? e.response.data.message : "Bad Request!");
       });
     };
 
@@ -289,6 +308,7 @@ export default defineComponent({
       userEmail,
       dateFormat,
       isLoading,
+      imageFallback,
       handleTableChange,
       renderTime,
       handleChangeDate
@@ -302,5 +322,16 @@ export default defineComponent({
   .logs-options-bar {
     margin-bottom: 20px;
   }
+}
+
+.ant-table-striped :deep(.table-striped) td {
+  background-color: #b3e5ff;
+}
+
+.ant-table-striped :deep(.table-striped-reject) td {
+  background-color: #ffe3b3;
+}
+.ant-table-striped :deep(.table-striped-delete) td {
+  background-color: #ffb3c0;
 }
 </style>

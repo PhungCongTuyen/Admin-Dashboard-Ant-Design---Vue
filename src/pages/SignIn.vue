@@ -38,6 +38,10 @@ export default defineComponent({
                 message.error("Invalid Email. Please try again!");
                 return;
             }
+            if (password.value === "") {
+              message.error("Password is required!");
+              return;
+            }
             loading.value = true;
             logInApi({email: email.value, password: password.value}).then((res) => {
                 localStorage.setItem("token", res.data.token);
@@ -47,13 +51,7 @@ export default defineComponent({
             }).catch((e) => {
                 loading.value = false;
                 if (e.response) {
-                    message.error({
-                      content: e.response.data.message,
-                      // style: {
-                      //   right: "10px",
-                      //   textAlign: "right"
-                      // }
-                    });
+                    message.error(message.error(typeof e.response.data.message === "string" ? e.response.data.message : "Bad Request!"));
                 }
             });
         };

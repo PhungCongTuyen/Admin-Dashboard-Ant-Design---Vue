@@ -29,5 +29,11 @@ module.exports = {
         quotes: ["error", "double"],
         semi: ["error", "always"],
         "vue/no-v-model-argument": "off",
+        "selector-pseudo-element-no-unknown": [
+            "off",
+            {
+                ignorePseudoElements: ["ng-deep"],
+            },
+        ],
     },
 };

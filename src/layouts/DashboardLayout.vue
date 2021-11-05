@@ -27,9 +27,9 @@
             <span>Settings</span>
           </a-menu-item>
         </a-sub-menu>
-        <a-menu-item key="/account-management" @click="handleRouting('/account-management')" v-if="role === 'admin'">
+        <a-menu-item key="/accounts-management" @click="handleRouting('/accounts-management')" v-if="role === 'admin'">
           <user-outlined/> 
-          <span>Account Management</span>
+          <span>Accounts Management</span>
         </a-menu-item>
         <a-menu-item key="/logs" @click="handleRouting('/logs')" v-if="role === 'admin'">
           <database-outlined/>
@@ -54,7 +54,7 @@
             <a-menu>
               <a-menu-item key="0">
                 <a @click="handleLogOut()"
-                   :style="{color: 'black', display: 'flex', justifyContent:'space-between', alignItems: 'center'}">
+                   :style="{color: 'black', display: 'flex', justifyContent:'space-between', alignItems: 'center', width: '100%'}">
                   <span>Log Out</span>
                   <logout-outlined :style="{paddingLeft: '10px'}"/>
                 </a>
@@ -91,8 +91,10 @@ export default defineComponent({
         const handleLogOut = () => {
             localStorage.removeItem("token");
             localStorage.removeItem("role");
+            localStorage.removeItem("email");
             router.push("/login");
         };
+
         const handleRouting = (value: string) => {
             router.push(value);
             href.value = [value];
@@ -103,12 +105,19 @@ export default defineComponent({
                 username.value = res.data.email;
                 role.value = res.data.role;
                 localStorage.setItem("role", res.data.role);
+                localStorage.setItem("email", res.data.email);
                 store.dispatch("setUserInfo", {
                     email: res.data.email,
                     role: res.data.role,
                     id: res.data.id,
                 });
-            }).catch((e) => message.error(e.response.message));
+            }).catch((e) => {
+              if (e.response.status === 401) {
+                handleLogOut();
+                return;
+              }
+              message.error(e.response.message);
+            });
         };
 
         /*------------------------- hooks -----------------------------*/

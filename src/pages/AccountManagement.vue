@@ -11,20 +11,20 @@
           okText="Save"
       >
         <div :style="{fontWeight: 'bold'}">Email:</div>
-        <a-input placeholder="Email..." v-model:value="username" :style="{marginBottom: '20px'}"
+        <a-input placeholder="Email" v-model:value="username" :style="{marginBottom: '20px'}"
                  :disabled="typeModal === 'edit'" autoComplete="chrome-off" name="email"/>
         <div :style="{marginBottom: '20px'}" v-if="typeModal === 'edit'">
           <a-checkbox v-model:checked="isChangePassword">Change password</a-checkbox>
           <div v-if="isChangePassword">
             <div :style="{fontWeight: 'bold'}">Password:</div>
-            <a-input-password class="auth-page-input" placeholder="Password....." type="password" autoComplete="chrome-off"
+            <a-input-password class="auth-page-input" placeholder="Password" type="password" autoComplete="chrome-off"
                               v-model:value="password"
                               :style="{marginBottom: '20px'}" name="password"/>
           </div>
         </div>
         <div v-if="typeModal !== 'edit'">
           <div :style="{fontWeight: 'bold'}">Password:</div>
-          <a-input-password class="auth-page-input" placeholder="Password....." type="password" v-model:value="password"
+          <a-input-password class="auth-page-input" placeholder="Password" type="password" v-model:value="password"
                             :style="{marginBottom: '20px'}" autoComplete="chrome-off" name="password"/>
         </div>
         <div :style="{fontWeight: 'bold'}">Role:</div>
@@ -32,23 +32,26 @@
             v-model:value="role"
             :style="{width: '100%'}"
             :options="roleOptions"
+            :disabled="username === presentAccount"
         />
       </a-modal>
       <a-form autoComplete="false">
         <span>Search: </span>
-        <a-input placeholder="Email..." style="width: 200px" v-model:value="searchInput" :style="{marginLeft: '10px'}"
+        <a-input placeholder="Email" style="width: 200px" v-model:value="searchInput" :style="{marginLeft: '10px'}"
                  autoComplete="off" name="search" :disabled="isLoading">
           <template #suffix>
             <search-outlined/>
           </template>
         </a-input>
-        <a-button type="primary" :disabled="isLoading" :style="{marginLeft: '10px'}" @click="onOpenModal('create', 'Create New Account', null)">
+        <a-button type="primary" :disabled="isLoading" :style="{marginLeft: '10px'}"
+                  @click="onOpenModal('create', 'Create New Account', null)">
           <plus-circle-outlined/>
-          Create New Award
+          Create New Account
         </a-button>
       </a-form>
     </div>
     <a-table
+        class="ant-table-striped"
         :columns="columns"
         :data-source="dataTable"
         :scroll="{ x: 1366, y: 'calc(100vh - 350px)' }"
@@ -57,6 +60,7 @@
         :pagination="pagination"
         size="small"
         :loading="isLoading"
+        :rowClassName="(record) => (record.role === 'admin' ? 'table-striped' : null)"
     >
       <template #no="{ index }">
         <span>{{ (pagination.current - 1) * pagination.pageSize + index + 1 }}</span>
@@ -65,7 +69,7 @@
         <a-button @click="onOpenModal('edit', 'Edit Account', record)" :style="{marginRight: '10px'}"
                   type="primary">Edit
         </a-button>
-        <a-button @click="onDeleteRow(record)" danger type="primary">Delete</a-button>
+        <a-button @click="onDeleteRow(record)" danger type="primary" v-if="record.email !== presentAccount">Delete</a-button>
       </template>
     </a-table>
   </div>
@@ -169,6 +173,7 @@ export default defineComponent({
     //variables for display on table
     const rawData = ref<RawData[]>([]);
     const dataTable = ref<ConvertedRawData[]>([]);
+    const presentAccount = localStorage.getItem("email");
 
     //variables for onChange in table
     const searchInput = ref<string>("");
@@ -203,9 +208,14 @@ export default defineComponent({
 
     const handleTableChange = (page: Pagination, filters: TableStateFilters, sorter: Sorter) => {
       const sortOrder = sorter.order === "ascend" ? 1 : -1;
-      sort.value = sorter.order ? `${sorter.field}: ${sortOrder}` : "";
+      sort.value = sorter.order ? `${sorter.field}:${sortOrder}` : "";
       currentPage.value = page?.current;
-      getListUser({page: currentPage.value || 1, pageSize, sort: sort.value, search: searchInput.value});
+      getListUser({
+        page: currentPage.value || 1,
+        pageSize,
+        sort: sort.value,
+        search: searchInput.value
+      });
     };
 
     const onOpenModal = (type: string, title: string, record: RawData) => {
@@ -227,13 +237,15 @@ export default defineComponent({
     const onDeleteRow = (record: RawData) => {
       Modal.confirm({
         title: "Do you want to delete this account?",
-        content: "When clicked the OK button, this account will be deleted",
+        content: "When the OK button is clicked, this account will be deleted",
         onOk() {
           deleteUserApi({id: record.id}).then((res) => {
+            isLoading.value = true;
             message.success(res.data.message);
             getListUser({page: currentPage.value || 1, pageSize, sort: sort.value, search: searchInput.value});
           }).catch((e) => {
-            message.error(e.response.data.message);
+            isLoading.value = false;
+            message.error(typeof e.response.data.message === "string" ? e.response.data.message : "Bad Request!");
           });
         },
         onCancel() {
@@ -246,19 +258,23 @@ export default defineComponent({
       password.value = "";
     };
 
-    const editUser = () =>  {
+    const editUser = () => {
       if (password.value === "" && isChangePassword.value) {
         confirmLoading.value = false;
         message.error("Password is required!");
         return;
       }
-      editUserApi({password: isChangePassword.value ? password.value : undefined, role: role.value, id: id.value}).then((res) => {
+      editUserApi({
+        password: isChangePassword.value ? password.value : undefined,
+        role: role.value,
+        id: id.value
+      }).then((res) => {
         message.success(`Edit account ${res.data.email} success!`);
         confirmLoading.value = false;
         showModal.value = false;
         getListUser({page: currentPage.value || 1, pageSize, sort: sort.value, search: searchInput.value});
       }).catch((e) => {
-        message.error(e.response.data.message);
+        message.error(typeof e.response.data.message === "string" ? e.response.data.message : "Bad Request!");
         confirmLoading.value = false;
       });
     };
@@ -280,7 +296,7 @@ export default defineComponent({
         showModal.value = false;
         getListUser({page: currentPage.value || 1, pageSize, sort: sort.value, search: searchInput.value});
       }).catch((e) => {
-        message.error(e.response.data.message);
+        message.error(typeof e.response.data.message === "string" ? e.response.data.message : "Bad Request!");
         confirmLoading.value = false;
       });
     };
@@ -317,7 +333,7 @@ export default defineComponent({
         totalItem.value = res.data.totalItem;
       }).catch((e) => {
         isLoading.value = false;
-        message.error(e.response.data.message);
+        message.error(typeof e.response.data.message === "string" ? e.response.data.message : "Bad Request!");
       });
     };
 
@@ -355,6 +371,7 @@ export default defineComponent({
       pagination,
       isLoading,
       isChangePassword,
+      presentAccount,
       onOpenModal,
       handleResetModal,
       handleOk,
@@ -372,5 +389,9 @@ export default defineComponent({
 
     margin-bottom: 20px;
   }
+}
+
+.ant-table-striped :deep(.table-striped) td {
+  background-color: #ffccb0;
 }
 </style>

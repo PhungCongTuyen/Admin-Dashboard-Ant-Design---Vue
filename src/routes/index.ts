@@ -58,8 +58,8 @@ const router = createRouter({
             component: () => import("../pages/AwardSettings.vue"),
         },
         {
-            path: "/account-management",
-            name: "AccountManagement",
+            path: "/accounts-management",
+            name: "AccountsManagement",
             meta: {
                 acceptedRole: ["admin"],
                 layout: "dashboard",
