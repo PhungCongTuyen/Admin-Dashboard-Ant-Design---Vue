@@ -1,5 +1,18 @@
 <template>
   <div class="awards-management-container">
+    <div class="awards-management-options-bar">
+      <span class="awards-management-options-label">Search: </span>
+      <a-input
+          v-model:value="searchInput"
+          placeholder="Award's name"
+          style="width: 200px"
+          :disabled="isLoading"
+      >
+        <template #suffix>
+          <search-outlined/>
+        </template>
+      </a-input>
+    </div>
     <a-modal
         :visible="showModal"
         title="Awards Management"
@@ -32,7 +45,7 @@
               placeholder="Description..."
               :auto-size="{ minRows: 2, maxRows: 10 }"
           />
-        </a-col> 
+        </a-col>
       </a-row>
     </a-modal>
     <a-table
@@ -85,180 +98,198 @@
 
 <script lang="ts">
 import {Modal} from "ant-design-vue";
-import {defineComponent, ref, computed} from "vue";
+import {defineComponent, ref, computed, watch} from "vue";
 import {
-    TableState,
-    TableStateFilters,
+  TableState,
+  TableStateFilters,
 } from "ant-design-vue/es/table/interface";
 import FallbackConstants from "../constants/fallback.constants";
 
 type Pagination = TableState["pagination"];
 
+
 interface DataTable {
-  key?: number | string;
-  url?: string;
-  likes?: number;
-  email?: string;
-  status?: string;
-  time?: string;
-  updatedBy?: string;
+  id: string,
+  key?: number | string,
+  url?: string,
+  likes?: number,
+  email?: string,
+  status?: string,
+  time?: string,
+  updatedBy?: string
 }
 
 interface RawData {
-  url?: string;
-  likes?: number;
-  email?: string;
-  status?: string;
-  time?: string;
-  updatedBy?: string;
+  id: string,
+  url?: string,
+  likes?: number,
+  email?: string,
+  status?: string,
+  time?: string,
+  updatedBy?: string
 }
 
 const columns = [
-    {
-        title: "No.",
-        key: "no",
-        align: "center",
-        width: 50,
-        slots: {customRender: "no"},
-    },
-    {
-        title: "Thumbnail",
-        key: "thumbnail",
-        dataIndex: "url",
-        align: "center",
-        width: 150,
-        slots: {customRender: "thumbnail"},
-    },
-    {
-        title: "Number of Likes",
-        key: "likes",
-        align: "center",
-        width: 100,
-        sorter: true,
-        sortDirections: ["ascend", "descend"],
-    },
-    {
-        title: "Owner's Email",
-        key: "email",
-        align: "center",
-        width: 200,
-    },
-    {
-        title: "Award",
-        key: "award",
-        dataIndex: "award",
-        align: "center",
-        width: 100,
-    },
-    {
-        title: "Description",
-        key: "description",
-        dataIndex: "description",
-        align: "center",
-        width: 200,
-    },
-    {
-        title: "Actions",
-        key: "actions",
-        dataIndex: "actions",
-        align: "center",
-        width: 100,
-        slots: {customRender: "actions"},
-    },
+  {
+    title: "No.",
+    key: "no",
+    align: "center",
+    width: 50,
+    slots: {customRender: "no"},
+  },
+  {
+    title: "Thumbnail",
+    key: "thumbnail",
+    dataIndex: "url",
+    align: "center",
+    width: 150,
+    slots: {customRender: "thumbnail"},
+  },
+  {
+    title: "Number of Likes",
+    key: "likes",
+    align: "center",
+    width: 100,
+    sorter: true,
+    sortDirections: ["ascend", "descend"],
+  },
+  {
+    title: "Owner's Email",
+    key: "email",
+    align: "center",
+    width: 200,
+  },
+  {
+    title: "Award",
+    key: "award",
+    dataIndex: "award",
+    align: "center",
+    width: 100,
+  },
+  {
+    title: "Description",
+    key: "description",
+    dataIndex: "description",
+    align: "center",
+    width: 200,
+  },
+  {
+    title: "Actions",
+    key: "actions",
+    dataIndex: "actions",
+    align: "center",
+    width: 100,
+    slots: {customRender: "actions"},
+  },
 ];
 
 export default defineComponent({
-    name: "AwardsManagement",
-    setup() {
+  name: "AwardsManagement",
+  setup() {
     /* ----------------------- variables -------------------------*/
-        const rawData = [
-            {award: "have Award", url: "", description: "good image"},
-            {award: "", url: "", description: "good quality"},
-            {award: null, url: "", description: ""},
-        ];
-        const fallback = FallbackConstants.IMAGE_FALLBACK;
-        const dataTable = rawData.map((prev: RawData, index: number) => {
-            return {
-                ...prev,
-                key: index,
-            };
-        });
-        const current = ref<number | undefined>(1);
-        const showModal = ref<boolean>(false);
-        const pageSize = 20;
-        const total = ref(dataTable.length);
-        const imageURL = ref<string | null | ArrayBuffer>("");
-        const description = ref<string>("");
-        const award = ref<string>("");
-        /* ------------------------- functions ----------------------*/
-        const pagination = computed(() => ({
-            total: total.value,
-            current: current.value,
-            pageSize: pageSize,
-        }));
+    const rawData = ref<RawData[]>([]);
+    const fallback = FallbackConstants.IMAGE_FALLBACK;
+    const dataTable = ref<DataTable[]>([]);
+    const current = ref<number | undefined>(1);
+    const showModal = ref<boolean>(false);
+    const isLoading = ref<boolean>(false);
+    const pageSize = 20;
+    const totalItem = ref<number>(0);
+    const imageURL = ref<string | null | ArrayBuffer>("");
+    const description = ref<string>("");
+    const award = ref<string>("");
+    const searchInput = ref<string>("");
+    /* ------------------------- functions ----------------------*/
+    const pagination = computed(() => ({
+      total: totalItem.value,
+      current: current.value,
+      pageSize: pageSize,
+    }));
 
-        const showConfirm = (type: string, data: DataTable, index: number) => {
-            Modal.confirm({
-                title: `Do you want to ${type} award of this image?`,
-                content:
+    const showConfirm = (type: string, data: DataTable, index: number) => {
+      Modal.confirm({
+        title: `Do you want to ${type} award of this image?`,
+        content:
             "When clicked the OK button, this dialog will be closed after 1 second",
-                onOk() {
-                    console.log(type);
-                    console.log("data", data);
-                    console.log("index", index);
-                },
-                onCancel() {
-                },
-            });
-        };
+        onOk() {
+          console.log(type);
+          console.log("data", data);
+          console.log("index", index);
+        },
+        onCancel() {
+        },
+      });
+    };
 
-        const handleTableChange = (
-            page: Pagination,
-            filters: TableStateFilters,
-            sorter: any
-        ) => {
-            current.value = page?.current;
-            console.log("page", page?.current);
-            console.log("filters", filters);
-            console.log("sorter", sorter);
-        };
+    const handleTableChange = (
+        page: Pagination,
+        filters: TableStateFilters,
+        sorter: any
+    ) => {
+      current.value = page?.current;
+      console.log("page", page?.current);
+      console.log("filters", filters);
+      console.log("sorter", sorter);
+    };
 
-        const handleOpenModal = (record: any, index: number) => {
-            showModal.value = true;
-            award.value = record.award;
-            description.value = record.description;
-            imageURL.value = record.url;
-            console.log(record, index);
-        };
+    const handleOpenModal = (record: any, index: number) => {
+      showModal.value = true;
+      award.value = record.award;
+      description.value = record.description;
+      imageURL.value = record.url;
+      console.log(record, index);
+    };
 
-        const handleCloseModal = () => {
-            showModal.value = false;
-        };
+    const handleCloseModal = () => {
+      showModal.value = false;
+    };
 
-        const handleOk = () => {
-            showModal.value = false;
-        };
+    const handleOk = () => {
+      showModal.value = false;
+    };
 
+    const convertDataToTable = () => {
+      dataTable.value = rawData.value?.map((prev: RawData, index: number) => {
         return {
-            imageURL,
-            award,
-            description,
-            columns,
-            dataTable,
-            showModal,
-            pagination,
-            fallback,
-            showConfirm,
-            handleTableChange,
-            handleOpenModal,
-            handleCloseModal,
-            handleOk,
+          ...prev,
+          key: index
         };
-    },
+      });
+    };
+    /*---------------------------- hooks ---------------------------*/
+    watch(rawData, convertDataToTable);
+
+    return {
+      imageURL,
+      award,
+      description,
+      columns,
+      dataTable,
+      showModal,
+      pagination,
+      fallback,
+      searchInput,
+      isLoading,
+      showConfirm,
+      handleTableChange,
+      handleOpenModal,
+      handleCloseModal,
+      handleOk,
+    };
+  },
 });
 </script>
 
 <style scoped lang="scss">
 .awards-management-container {
+  .awards-management-options-bar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+
+    .awards-management-options-label {
+      margin-right: 10px;
+    }
+  }
 }
 </style>

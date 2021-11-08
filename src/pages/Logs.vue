@@ -2,7 +2,7 @@
   <div class="logs-container">
     <a-form autoComplete="false" class="logs-options-bar">
       <span>Search: </span>
-      <a-input placeholder="Email" style="width: 200px" v-model:value="userEmail" :style="{marginLeft: '10px'}"
+      <a-input placeholder="Email of Moderator/Admin" style="width: 200px" v-model:value="userEmail" :style="{marginLeft: '10px'}"
                autoComplete="off" name="search" :disabled="isLoading">
         <template #suffix>
           <search-outlined/>
@@ -20,7 +20,7 @@
     <a-table
         :columns="columns"
         :data-source="dataTable"
-        :scroll="{ x: 1920, y: 'calc(100vh - 350px)' }"
+        :scroll="{ x: 2500, y: 'calc(100vh - 350px)' }"
         bordered
         size="small"
         class="ant-table-striped"
@@ -36,14 +36,30 @@
       <template #image="{ record }">
         <a-image
             :src="record?.image?.link"
-            :width="100"
-            :style="{minHeight: '100px'}"
+            :width="70"
+            :style="{minHeight: '70px'}"
         >
           <template #placeholder v-if="record.image?.link">
             <a-image
                 :src="imageFallback"
-                :width="100"
-                :height="100"
+                :width="70"
+                :height="70"
+                :preview="false"
+            />
+          </template>
+        </a-image>
+      </template>
+      <template #awardImage="{ record }">
+        <a-image
+            :src="record?.award?.link"
+            :width="70"
+            :style="{minHeight: '70px'}"
+        >
+          <template #placeholder  v-if="record.award?.link">
+            <a-image
+                :src="imageFallback"
+                :width="70"
+                :height="70"
                 :preview="false"
             />
           </template>
@@ -186,6 +202,35 @@ const columns = [
         slots: {customRender: "imageUpdatedTime"},
         width: 100,
       }
+    ]
+  },
+  {
+    title: "Awards Settings",
+    key: "awards-management",
+    align: "center",
+    children: [
+      {
+        title: "Name",
+        key: "award-name",
+        align: "center",
+        dataIndex: ["award", "name"],
+        width: 100
+      },
+      {
+        title: "Description",
+        key: "award-name",
+        align: "center",
+        dataIndex: ["award", "description"],
+        width: 200,
+      },
+      {
+        title: "Icon",
+        key: "award-name",
+        align: "center",
+        dataIndex: ["award", "link"],
+        slots: {customRender: "awardImage"},
+        width: 100
+      },
     ]
   }
 ];
