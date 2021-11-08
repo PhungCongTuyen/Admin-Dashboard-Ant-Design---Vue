@@ -6,6 +6,7 @@
           v-model:value="searchInput"
           placeholder="Award's name"
           style="width: 200px"
+          :disabled="isLoading"
       >
         <template #suffix>
           <search-outlined/>
@@ -78,6 +79,7 @@
         </a-row>
       </a-modal>
       <a-button
+          :disabled="isLoading"
           type="primary"
           :style="{ marginLeft: '10px' }"
           @click="onOpenModal('create', 'Create New Award')"
@@ -101,18 +103,34 @@
             (pagination.current - 1) * pagination.pageSize + index + 1
           }}</span>
       </template>
-      <template #actions="{ record, index }">
+      <template #image="{ record }">
+        <a-image
+            :src="record.link"
+            :width="70"
+            :style="{minHeight: '70px'}"
+        >
+          <template #placeholder>
+            <a-image
+                :src="imageFallback"
+                :width="70"
+                :height="70"
+                :preview="false"
+            />
+          </template>
+        </a-image>
+      </template>
+      <template #actions="{ record }">
         <a-button
             :style="{ marginRight: '10px' }"
             type="primary"
-            @click="onOpenModal('edit', 'Edit Award', record, index)"
+            @click="onOpenModal('edit', 'Edit Award', record)"
         >
           Edit
         </a-button>
         <a-button
             danger
             type="primary"
-            @click="onDeleteRow(record, index)"
+            @click="onDeleteRow(record.id)"
         >
           Delete
         </a-button>
@@ -124,7 +142,10 @@
 <script lang="ts">
 import debounce from "lodash/debounce";
 import {Modal, message} from "ant-design-vue";
-import {defineComponent, watch, ref, computed} from "vue";
+import {defineComponent, watch, ref, computed, onMounted} from "vue";
+import {getListAwardsApi, deleteAwardApi, createAwardApi, editAwardApi} from "@/services/apis/award.api";
+import FallbackConstants from "@/constants/fallback.constants";
+import {dataURItoBlob} from "@/utils/dataToUriBlob";
 import {
   TableState,
   TableStateFilters,
@@ -149,21 +170,40 @@ interface FileInfo {
 }
 
 interface RawData {
-  name: string;
+  createdAt: string;
+  deleted: boolean;
   description: string;
+  id: string;
+  link: string;
+  name: string;
+  updatedAt: string;
 }
 
 interface ConvertedData {
-  name: string;
+  key: number;
+  createdAt: string;
+  deleted: boolean;
   description: string;
+  id: string;
+  link: string;
+  name: string;
+  updatedAt: string;
 }
 
-//
-// interface DataTable {
-//   key?: string,
-//   name?: string,
-//   description?: string
-// }
+type Sorter = {
+  column: {
+    title: string,
+    key: string,
+    dataIndex: string,
+    sorter: boolean,
+    width: number,
+    align: string
+  },
+  columnKey: string,
+  field: string,
+  order: string
+}
+
 
 const columns = [
   {
@@ -178,7 +218,8 @@ const columns = [
     key: "name",
     dataIndex: "name",
     align: "center",
-    width: 100
+    width: 100,
+    sorter: true,
   },
   {
     title: "Award's Description",
@@ -186,12 +227,17 @@ const columns = [
     dataIndex: "description",
     align: "center",
     width: 200,
+    sorter: true,
   },
   {
     title: "Award's Icon",
-    key: "icon",
+    key: "link",
+    dataIndex: "link",
     align: "center",
     width: 100,
+    slots: {
+      customRender: "image"
+    }
   },
   {
     title: "Actions",
@@ -210,6 +256,7 @@ export default defineComponent({
     const rawData = ref<RawData[]>([]);
     const dataTable = ref<ConvertedData[]>([]);
     const searchInput = ref<string>("");
+    const sort = ref<string>("");
     const isLoading = ref<boolean>(false);
 
     // variables for pagination
@@ -224,8 +271,10 @@ export default defineComponent({
     const titleOfModal = ref("Create New Award");
     const showModal = ref(false);
     const confirmLoading = ref(false);
-    const imageURL = ref<string | null | ArrayBuffer>("");
-    const fileList = ref([]);
+    const imageURL = ref<string>("");
+    const id = ref<string>("");
+    const fileList = ref<FileItem[]>([]);
+    const imageFallback = FallbackConstants.IMAGE_FALLBACK;
 
     /*--------------------------- functions ---------------------------*/
     const pagination = computed(() => ({
@@ -234,46 +283,57 @@ export default defineComponent({
       pageSize: pageSize,
     }));
 
-    const onSearch = debounce((e) => console.log(e, "300 down"), 300);
+    const onSearch = debounce((e) => {
+      searchInput.value = e;
+      currentPage.value = 1;
+      getListAward({page: currentPage.value || 1, pageSize, sort: sort.value, search: e});
+    }, 1000);
 
     const handleTableChange = (
         page: Pagination,
         filters: TableStateFilters,
-        sorter: any
+        sorter: Sorter
     ) => {
+      const sortOrder = sorter.order === "ascend" ? 1 : -1;
+      sort.value = sorter.order ? `${sorter.field}:${sortOrder}` : "";
       currentPage.value = page?.current;
-      console.log("page", page?.current);
-      console.log("filters", filters);
-      console.log("sorter", sorter);
+      getListAward({
+        page: currentPage.value || 1,
+        pageSize,
+        sort: sort.value,
+        search: searchInput.value
+      });
     };
 
     const onOpenModal = (
         type: string,
         title: string,
-        record?: any,
-        index?: number
+        record?: any
     ) => {
       titleOfModal.value = title;
       typeModal.value = type;
       showModal.value = true;
       if (type === "edit") {
+        id.value = record.id;
+        imageURL.value = record.link;
         awardName.value = record.name;
         awardDescription.value = record.description;
       } else {
+        id.value = "";
+        imageURL.value = "";
         awardName.value = "";
         awardDescription.value = "";
       }
-      console.log(record, index);
     };
 
-    const onDeleteRow = (record: any, index: number) => {
+    const onDeleteRow = (id: string) => {
       Modal.confirm({
         title: "Do you want to delete this award?",
         content:
-            "When clicked the OK button, this dialog will be closed after 1 second",
+            "When the OK button is clicked, this award will be deleted.",
         onOk() {
-          console.log("data", record);
-          console.log("index", index);
+          isLoading.value = true;
+          deleteAward({id: id});
         },
         onCancel() {
         },
@@ -283,24 +343,54 @@ export default defineComponent({
     const handleResetModal = () => {
       fileList.value = [];
       imageURL.value = "";
+      awardName.value = "";
+      awardDescription.value = "";
     };
 
     const handleOk = () => {
-      showModal.value = false;
-      console.log(awardName.value);
-      console.log(awardDescription.value);
+      if (!awardName.value || !imageURL.value) {
+        message.error("Award's name and Image are required!");
+        return;
+      }
+      const formData = new FormData();
+      const blob = dataURItoBlob(imageURL.value);
+      const fileName = fileList.value[0].name;
+      formData.append("name", awardName.value);
+      formData.append("description", awardDescription.value);
+      formData.append("image", blob, fileName);
+      if (typeModal.value === "create") {
+        createAwardApi(formData).then(() => {
+          showModal.value = false;
+          message.success("Create new award success!");
+          getListAward({page: currentPage.value || 1, pageSize, sort: sort.value, search: searchInput.value});
+        }).catch((e) => {
+          message.error(typeof e.response.data.message === "string" ? e.response.data.message : "Bad Request!");
+        });
+      } else {
+        editAwardApi(formData, id.value).then(() => {
+          showModal.value = false;
+          message.success("Edit award success!");
+          getListAward({page: currentPage.value || 1, pageSize, sort: sort.value, search: searchInput.value});
+        }).catch((e) => {
+          message.error(typeof e.response.data.message === "string" ? e.response.data.message : "Bad Request!");
+        });
+      }
     };
 
     const handleCancel = () => {
       showModal.value = false;
     };
+
     // functions for upload image
+
     const handleUploadImage = (e: FileInfo) => {
-      console.log(e);
+      fileList.value = e.fileList;
       if (e.file.type !== "image/jpeg" && e.file.type !== "image/png") return;
       const reader = new FileReader();
       reader.onload = () => {
-        imageURL.value = reader.result;
+        imageURL.value = reader.result as string;
+        console.log(btoa(reader.result as string));
+
       };
       reader.readAsDataURL(e.file.originFileObj);
     };
@@ -327,7 +417,51 @@ export default defineComponent({
       });
     };
 
+    const getListAward = ({
+                            page,
+                            pageSize,
+                            sort,
+                            search
+                          }: {
+      page: number,
+      pageSize: number,
+      sort: string,
+      search: string,
+    }) => {
+      isLoading.value = true;
+      getListAwardsApi({
+        page,
+        pageSize,
+        sort,
+        search,
+      }).then((res) => {
+        rawData.value = res.data.data;
+        totalItem.value = res.data.totalItem;
+        isLoading.value = false;
+      }).catch((e) => {
+        isLoading.value = false;
+        message.error(typeof e.response.data.message === "string" ? e.response.data.message : "Bad Request!");
+      });
+    };
+
+    const deleteAward = ({id}: { id: string }) => {
+      isLoading.value = true;
+      deleteAwardApi({id: id}).then(() => {
+        message.success("Deleted!");
+        getListAward({page: currentPage.value || 1, pageSize, sort: sort.value, search: searchInput.value});
+      }).catch((e) => {
+        message.error(typeof e.response.data.message === "string" ? e.response.data.message : "Bad Request!");
+        isLoading.value = false;
+      });
+    };
+
     /*--------------------------- hooks ---------------------------*/
+    onMounted(() => getListAward({
+      page: currentPage.value || 1,
+      pageSize,
+      sort: sort.value,
+      search: searchInput.value
+    }));
     watch(searchInput, onSearch);
     watch(rawData, convertDataToTable);
 
@@ -344,6 +478,7 @@ export default defineComponent({
       columns,
       pagination,
       isLoading,
+      imageFallback,
       handleTableChange,
       onDeleteRow,
       onOpenModal,

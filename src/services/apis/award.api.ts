@@ -1,7 +1,7 @@
 import authorizedRequests from "@/services/authorized.requests";
 import ENDPOINTS from "@/services/endpoints";
 
-const getListAwardsApi = ({
+export const getListAwardsApi = ({
     page,
     pageSize,
     sort,
@@ -22,18 +22,14 @@ const getListAwardsApi = ({
     });
 };
 
-const createAwardApi = ({
-    name,
-    description,
-    image,
-}: {
-    name: string;
-    description: string;
-    image: BinaryType;
-}) => {
-    return authorizedRequests.post(ENDPOINTS.AWARD, {
-        name: name,
-        description: description,
-        image: image,
-    });
+export const createAwardApi = (data: FormData) => {
+    return authorizedRequests.post(ENDPOINTS.AWARD, data);
+};
+
+export const deleteAwardApi = ({ id }: { id: string }) => {
+    return authorizedRequests.delete(ENDPOINTS.AWARD + `/${id}`);
+};
+
+export const editAwardApi = (data: FormData, id: string) => {
+    return authorizedRequests.put(ENDPOINTS.AWARD + `/${id}`, data);
 };

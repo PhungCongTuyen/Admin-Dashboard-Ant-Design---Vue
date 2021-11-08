@@ -325,7 +325,7 @@ export default defineComponent({
 
     const renderTime = (data: string | undefined) => {
       if (!data) return null;
-      return moment(data).format("HH:mm:ss - DD/MM/YYYY");
+      return moment(data).utc(false).format("HH:mm:ss - DD/MM/YYYY");
     };
 
     /*---------------------------- hooks --------------------------*/
