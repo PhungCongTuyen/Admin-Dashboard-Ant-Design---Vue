@@ -20,7 +20,7 @@
     <a-table
         :columns="columns"
         :data-source="dataTable"
-        :scroll="{ x: 2500, y: 'calc(100vh - 350px)' }"
+        :scroll="{ x: 3000, y: 'calc(100vh - 350px)' }"
         bordered
         size="small"
         class="ant-table-striped"
@@ -76,6 +76,9 @@
       </template>
       <template #imageUpdatedTime="{record}">
         <span>{{ renderTime(record?.image?.updatedAt) }}</span>
+      </template>
+      <template #awardUpdatedTime="{record}">
+        <span>{{ renderTime(record?.award?.updatedAt) }}</span>
       </template>
     </a-table>
   </div>
@@ -142,7 +145,7 @@ const columns = [
     key: "action",
     dataIndex: "createdAt",
     align: "center",
-    width: 100,
+    width: 200,
     slots: {customRender: "actionTime"}
   },
   {
@@ -157,7 +160,7 @@ const columns = [
     key: "nickname",
     dataIndex: ["customer", "nickName"],
     align: "center",
-    width: 100,
+    width: 200,
   },
   {
     title: "Images Management",
@@ -192,7 +195,7 @@ const columns = [
         align: "center",
         dataIndex: ["image", "createdAt"],
         slots: {customRender: "imageCreatedTime"},
-        width: 100,
+        width: 200,
       },
       {
         title: "Updated At",
@@ -200,12 +203,12 @@ const columns = [
         align: "center",
         dataIndex: ["image", "updatedAt"],
         slots: {customRender: "imageUpdatedTime"},
-        width: 100,
+        width: 200,
       }
     ]
   },
   {
-    title: "Awards Settings",
+    title: "Awards Management",
     key: "awards-management",
     align: "center",
     children: [
@@ -230,6 +233,14 @@ const columns = [
         dataIndex: ["award", "link"],
         slots: {customRender: "awardImage"},
         width: 100
+      },
+      {
+        title: "Updated At",
+        key: "award-updated-at",
+        align: "center",
+        dataIndex: ["award", "updatedAt"],
+        width: 200,
+        slots: {customRender: "awardUpdatedTime"},
       },
     ]
   }

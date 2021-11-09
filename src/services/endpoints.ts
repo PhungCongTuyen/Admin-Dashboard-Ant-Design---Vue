@@ -6,6 +6,7 @@ const ENDPOINTS = {
     USER: "/user",
     CUSTOMER: "/customer",
     IMAGES: "/image/images-by-admin",
+    IMAGES_AWARD: "/image/images-with-award",
     IMAGES_UPDATE: "/image/update-status",
     AWARD: "/award",
     LOGS: "/log",

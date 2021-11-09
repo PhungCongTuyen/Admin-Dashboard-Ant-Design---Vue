@@ -22,6 +22,27 @@ export const getListImageApi = ({
     });
 };
 
+export const getListImageAwardApi = ({
+    page,
+    pageSize,
+    sort,
+    awarded,
+}: {
+    page: number;
+    pageSize: number;
+    sort: string;
+    awarded: string;
+}) => {
+    return authorizedRequests.get(ENDPOINTS.IMAGES_AWARD, {
+        params: {
+            page: page,
+            pageSize: pageSize,
+            sort: sort,
+            awarded: awarded,
+        },
+    });
+};
+
 export const updateStatusImageApi = ({
     imageId,
     status,

@@ -1,6 +1,17 @@
 <template>
   <div class="images-management-container">
     <div class="images-management-options-bar">
+      <span class="images-management-options-label">Search:</span>
+      <a-input
+          v-model:value="searchInput"
+          placeholder="Award's name"
+          style="width: 200px"
+          :disabled="isLoading"
+      >
+        <template #suffix>
+          <search-outlined/>
+        </template>
+      </a-input>
       <span class="images-management-options-label">Filter:</span>
       <a-select
           v-model:value="select"
@@ -83,6 +94,7 @@ import {TableState, TableStateFilters} from "ant-design-vue/es/table/interface";
 import {getListImageApi, updateStatusImageApi} from "@/services/apis/image.api";
 import FallbackConstants from "@/constants/fallback.constants";
 import moment from "moment";
+import debounce from "lodash/debounce";
 
 type Pagination = TableState["pagination"];
 
@@ -214,6 +226,21 @@ const filterOptions = [
   },
 ];
 
+type Sorter = {
+  column: {
+    title: string,
+    key: string,
+    dataIndex: string,
+    sorter: boolean,
+    width: number,
+    align: string
+  },
+  columnKey: string,
+  field: string,
+  order: string
+}
+
+
 export default defineComponent({
   name: "ImagesManagement",
   setup() {
@@ -224,6 +251,7 @@ export default defineComponent({
     const dataTable = ref<DataTable[]>([]);
     const select = ref<string>("");
     const sort = ref<string>("");
+    const searchInput = ref<string>("");
     const isLoading = ref<boolean>(false);
     const imageFallback = FallbackConstants.IMAGE_FALLBACK;
 
@@ -238,6 +266,12 @@ export default defineComponent({
       current: currentPage.value,
       pageSize: pageSize,
     }));
+
+    const onSearch = debounce((e) => {
+      searchInput.value = e;
+      currentPage.value = 1;
+      getListImages({page: currentPage.value || 1, pageSize: pageSize, sort: sort.value, status: select.value === "" ? undefined : select.value});
+    }, 1000);
 
     const handleChangeFilter = (value: string) => {
       select.value = value;
@@ -270,7 +304,7 @@ export default defineComponent({
       });
     };
 
-    const handleTableChange = (page: Pagination, filters: TableStateFilters, sorter: any) => {
+    const handleTableChange = (page: Pagination, filters: TableStateFilters, sorter: Sorter) => {
       const sortOrder = sorter.order === "ascend" ? 1 : -1;
       sort.value = sorter.order ? `${sorter.columnKey}:${sortOrder}` : "";
       currentPage.value = page?.current;
@@ -336,8 +370,10 @@ export default defineComponent({
       status: select.value === "" ? undefined : select.value
     }));
     watch(rawData, convertDataToTable);
+    watch(searchInput, onSearch);
 
     return {
+      searchInput,
       isLoading,
       filterOptions,
       dataTable,

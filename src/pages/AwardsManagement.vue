@@ -4,7 +4,7 @@
       <span class="awards-management-options-label">Search: </span>
       <a-input
           v-model:value="searchInput"
-          placeholder="Award's name"
+          placeholder="Email"
           style="width: 200px"
           :disabled="isLoading"
       >
@@ -12,6 +12,14 @@
           <search-outlined/>
         </template>
       </a-input>
+      <span class="awards-management-options-label-2">Filter:</span>
+      <a-select
+          v-model:value="select"
+          style="width: 200px"
+          :options="filterOptions"
+          @change="handleChangeFilter"
+          :disabled="isLoading"
+      />
     </div>
     <a-modal
         :visible="showModal"
@@ -51,7 +59,7 @@
     <a-table
         :columns="columns"
         :data-source="dataTable"
-        :scroll="{ x: 1366, y: 'calc(100vh - 350px)' }"
+        :scroll="{ x: 1920, y: 'calc(100vh - 350px)' }"
         bordered
         :pagination="pagination"
         @change="handleTableChange"
@@ -62,14 +70,21 @@
             (pagination.current - 1) * pagination.pageSize + index + 1
           }}</span>
       </template>
-      <template #thumbnail="{ record }">
+      <template #image="{ record }">
         <a-image
-            :src="
-            record.url ||
-              'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png'
-          "
+            :src="record.link"
             :width="100"
-        />
+            :style="{minHeight: '100px'}"
+        >
+          <template #placeholder>
+            <a-image
+                :src="imageFallback"
+                :width="100"
+                :height="100"
+                :preview="false"
+            />
+          </template>
+        </a-image>
       </template>
       <template #actions="{ record }">
         <span>
@@ -97,13 +112,15 @@
 </template>
 
 <script lang="ts">
-import {Modal} from "ant-design-vue";
+import {message, Modal} from "ant-design-vue";
 import {defineComponent, ref, computed, watch} from "vue";
 import {
   TableState,
   TableStateFilters,
 } from "ant-design-vue/es/table/interface";
 import FallbackConstants from "../constants/fallback.constants";
+import {getListImageApi, getListImageAwardApi} from "@/services/apis/image.api";
+import debounce from "lodash/debounce";
 
 type Pagination = TableState["pagination"];
 
@@ -129,82 +146,160 @@ interface RawData {
   updatedBy?: string
 }
 
+const filterOptions = [
+  {
+    value: "approved",
+    label: "Approved Images",
+  },
+  {
+    value: "awarded",
+    label: "Awarded Images",
+  }
+];
+
 const columns = [
   {
     title: "No.",
     key: "no",
     align: "center",
-    width: 50,
+    width: 60,
     slots: {customRender: "no"},
   },
   {
-    title: "Thumbnail",
-    key: "thumbnail",
-    dataIndex: "url",
+    title: "Image",
+    key: "image",
+    dataIndex: "link",
     align: "center",
     width: 150,
-    slots: {customRender: "thumbnail"},
+    slots: {customRender: "image"},
   },
   {
     title: "Number of Likes",
-    key: "likes",
+    key: "like",
     align: "center",
+    dataIndex: "totalLike",
     width: 100,
     sorter: true,
-    sortDirections: ["ascend", "descend"],
   },
   {
     title: "Owner's Email",
-    key: "email",
+    key: "ownerEmail",
+    dataIndex: ["customer", "email"],
     align: "center",
     width: 200,
+    sorter: true,
   },
   {
-    title: "Award",
-    key: "award",
-    dataIndex: "award",
+    title: "Owner's Nickname",
+    key: "ownerName",
+    dataIndex: ["customer", "nickName"],
+    align: "center",
+    width: 200,
+    sorter: true,
+  },
+  {
+    title: "Status",
+    key: "status",
+    dataIndex: "status",
     align: "center",
     width: 100,
+    sorter: true,
   },
   {
-    title: "Description",
-    key: "description",
-    dataIndex: "description",
+    title: "Created At",
+    key: "createdAt",
+    dataIndex: "createdAt",
     align: "center",
-    width: 200,
+    width: 150,
+    sorter: true,
+    slots: {customRender: "imageCreatedTime"}
+  },
+  {
+    title: "Updated At",
+    key: "updatedAt",
+    dataIndex: "updatedAt",
+    align: "center",
+    width: 150,
+    sorter: true,
+    slots: {customRender: "imageUpdatedTime"}
   },
   {
     title: "Actions",
     key: "actions",
     dataIndex: "actions",
     align: "center",
-    width: 100,
+    width: 250,
     slots: {customRender: "actions"},
   },
 ];
+
+type Sorter = {
+  column: {
+    title: string,
+    key: string,
+    dataIndex: string,
+    sorter: boolean,
+    width: number,
+    align: string
+  },
+  columnKey: string,
+  field: string,
+  order: string
+}
 
 export default defineComponent({
   name: "AwardsManagement",
   setup() {
     /* ----------------------- variables -------------------------*/
     const rawData = ref<RawData[]>([]);
-    const fallback = FallbackConstants.IMAGE_FALLBACK;
+    const imageFallback = FallbackConstants.IMAGE_FALLBACK;
     const dataTable = ref<DataTable[]>([]);
-    const current = ref<number | undefined>(1);
+    const currentPage = ref<number | undefined>(1);
     const showModal = ref<boolean>(false);
     const isLoading = ref<boolean>(false);
     const pageSize = 20;
     const totalItem = ref<number>(0);
     const imageURL = ref<string | null | ArrayBuffer>("");
     const description = ref<string>("");
+    const select = ref<string>("approved");
+    const sort = ref<string>("");
     const award = ref<string>("");
     const searchInput = ref<string>("");
     /* ------------------------- functions ----------------------*/
     const pagination = computed(() => ({
       total: totalItem.value,
-      current: current.value,
+      current: currentPage.value,
       pageSize: pageSize,
     }));
+
+    const onSearch = debounce((e) => {
+      searchInput.value = e;
+      currentPage.value = 1;
+      if (select.value === "approved") {
+        getListImages({page: currentPage.value || 1, pageSize: pageSize, sort: sort.value, status: "approved"});
+      } else {
+        getListImagesAward({page: currentPage.value || 1, pageSize: pageSize, sort: sort.value, awarded: e});
+      }
+    }, 1000);
+
+    const handleChangeFilter = (value: string) => {
+      select.value = value;
+      if (value === "approved") {
+        getListImages({
+          page: 1,
+          pageSize: pageSize,
+          sort: "",
+          status: "approved"
+        });
+      } else {
+        getListImagesAward({
+          page: 1,
+          pageSize: pageSize,
+          sort: "",
+          awarded: searchInput.value
+        });
+      }
+    };
 
     const showConfirm = (type: string, data: DataTable, index: number) => {
       Modal.confirm({
@@ -224,12 +319,26 @@ export default defineComponent({
     const handleTableChange = (
         page: Pagination,
         filters: TableStateFilters,
-        sorter: any
+        sorter: Sorter
     ) => {
-      current.value = page?.current;
-      console.log("page", page?.current);
-      console.log("filters", filters);
-      console.log("sorter", sorter);
+      const sortOrder = sorter.order === "ascend" ? 1 : -1;
+      sort.value = sorter.order ? `${sorter.columnKey}:${sortOrder}` : "";
+      currentPage.value = page?.current;
+      if (select.value === "approved") {
+        getListImages({
+          page: currentPage.value || 1,
+          pageSize: pageSize,
+          sort: sort.value,
+          status: "approved"
+        });
+      } else {
+        getListImagesAward({
+          page: currentPage.value || 1,
+          pageSize: pageSize,
+          sort: sort.value,
+          awarded: searchInput.value
+        });
+      }
     };
 
     const handleOpenModal = (record: any, index: number) => {
@@ -256,20 +365,59 @@ export default defineComponent({
         };
       });
     };
+
+
+    const getListImages = ({
+                             page,
+                             pageSize,
+                             sort,
+                             status
+                           }: { page: number, pageSize: number, sort: string, status?: string }) => {
+      isLoading.value = true;
+      getListImageApi({page, pageSize, sort, status}).then((res) => {
+        rawData.value = res.data.data;
+        totalItem.value = res.data.totalItem;
+        isLoading.value = false;
+      }).catch((e) => {
+        message.error(typeof e.response.data.message === "string" ? e.response.data.message : "Bad Request!");
+        isLoading.value = false;
+      });
+    };
+
+    const getListImagesAward = ({
+                                  page,
+                                  pageSize,
+                                  sort,
+                                  awarded
+                                }: { page: number, pageSize: number, sort: string, awarded: string }) => {
+      isLoading.value = true;
+      getListImageAwardApi({page, pageSize, sort, awarded}).then((res) => {
+        rawData.value = res.data.data;
+        totalItem.value = res.data.totalItem;
+        isLoading.value = false;
+      }).catch((e) => {
+        message.error(typeof e.response.data.message === "string" ? e.response.data.message : "Bad Request!");
+        isLoading.value = false;
+      });
+    };
     /*---------------------------- hooks ---------------------------*/
     watch(rawData, convertDataToTable);
+    watch(searchInput, onSearch);
 
     return {
       imageURL,
       award,
+      select,
       description,
       columns,
       dataTable,
       showModal,
       pagination,
-      fallback,
+      imageFallback,
       searchInput,
       isLoading,
+      filterOptions,
+      handleChangeFilter,
       showConfirm,
       handleTableChange,
       handleOpenModal,
@@ -288,6 +436,11 @@ export default defineComponent({
     margin-bottom: 20px;
 
     .awards-management-options-label {
+      margin-right: 10px;
+    }
+
+    .awards-management-options-label-2 {
+      margin-left: 10px;
       margin-right: 10px;
     }
   }
