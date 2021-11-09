@@ -6,11 +6,13 @@ export const getListImageApi = ({
     pageSize,
     sort,
     status,
+    search,
 }: {
     page: number;
     pageSize: number;
     sort: string;
     status?: string;
+    search: string;
 }) => {
     return authorizedRequests.get(ENDPOINTS.IMAGES, {
         params: {
@@ -18,6 +20,7 @@ export const getListImageApi = ({
             pageSize: pageSize,
             sort: sort,
             status: status,
+            search: search,
         },
     });
 };

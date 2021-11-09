@@ -9,6 +9,8 @@ const ENDPOINTS = {
     IMAGES_AWARD: "/image/images-with-award",
     IMAGES_UPDATE: "/image/update-status",
     AWARD: "/award",
+    ASSIGN_AWARD: "/image/assign-award",
+    UNASSIGN_AWARD: (id: string) => `/image/${id}/un-assign-award`,
     LOGS: "/log",
 };
 

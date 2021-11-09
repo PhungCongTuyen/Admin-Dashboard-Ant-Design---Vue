@@ -1,21 +1,10 @@
 <template>
   <div class="awards-management-container">
     <div class="awards-management-options-bar">
-      <span class="awards-management-options-label">Search: </span>
-      <a-input
-          v-model:value="searchInput"
-          placeholder="Email"
-          style="width: 200px"
-          :disabled="isLoading"
-      >
-        <template #suffix>
-          <search-outlined/>
-        </template>
-      </a-input>
-      <span class="awards-management-options-label-2">Filter:</span>
+      <span class="awards-management-options-label">Filter: </span>
       <a-select
           v-model:value="select"
-          style="width: 200px"
+          style="width: 120px"
           :options="filterOptions"
           @change="handleChangeFilter"
           :disabled="isLoading"
@@ -33,17 +22,23 @@
               :src="imageURL"
               alt="award"
               :style="{ width: '128px' }"
-              :fallback="fallback"
-          />
+          >
+            <template #placeholder>
+              <a-image
+                :src="imageFallback"
+                :style="{ width: '128px' }"
+              />
+            </template>
+          </a-image>
         </a-col>
         <a-col :span="16">
           <div :style="{ fontWeight: 'bold' }">
             Award:
           </div>
-          <a-input
+          <a-select
               v-model:value="award"
-              placeholder="Name of award..."
-              :style="{ marginBottom: '20px' }"
+              style="width: 100%"
+              :options="awardOptions"
           />
           <div :style="{ fontWeight: 'bold' }">
             Description:
@@ -52,6 +47,7 @@
               v-model:value="description"
               placeholder="Description..."
               :auto-size="{ minRows: 2, maxRows: 10 }"
+              :disabled="true"
           />
         </a-col>
       </a-row>
@@ -64,6 +60,7 @@
         :pagination="pagination"
         @change="handleTableChange"
         size="small"
+        :loading="isLoading"
     >
       <template #no="{ index }">
         <span>{{
@@ -73,14 +70,14 @@
       <template #image="{ record }">
         <a-image
             :src="record.link"
-            :width="100"
-            :style="{minHeight: '100px'}"
+            :width="70"
+            :style="{minHeight: '70px'}"
         >
           <template #placeholder>
             <a-image
                 :src="imageFallback"
-                :width="100"
-                :height="100"
+                :width="70"
+                :height="70"
                 :preview="false"
             />
           </template>
@@ -92,7 +89,7 @@
               v-if="!record.award"
               :style="{ marginRight: '10px' }"
               type="primary"
-              @click="handleOpenModal(record, index)"
+              @click="handleOpenModal(record)"
           >
             Edit Award
           </a-button>
@@ -101,11 +98,33 @@
               :style="{ marginRight: '10px' }"
               danger
               type="primary"
-              @click="showConfirm('reset', record, index)"
+              @click="showConfirm(record)"
           >
             Reset Award
           </a-button>
         </span>
+      </template>
+      <template #imageCreatedTime="{record}">
+        <span>{{ renderTime(record?.createdAt) }}</span>
+      </template>
+      <template #imageUpdatedTime="{record}">
+        <span>{{ renderTime(record?.updatedAt) }}</span>
+      </template>
+      <template #awardImage="{ record }">
+        <a-image
+            :src="record?.award?.link"
+            :width="70"
+            :style="{minHeight: '70px'}"
+        >
+          <template #placeholder v-if="record.award?.link">
+            <a-image
+                :src="imageFallback"
+                :width="70"
+                :height="70"
+                :preview="false"
+            />
+          </template>
+        </a-image>
       </template>
     </a-table>
   </div>
@@ -113,47 +132,114 @@
 
 <script lang="ts">
 import {message, Modal} from "ant-design-vue";
-import {defineComponent, ref, computed, watch} from "vue";
+import {defineComponent, ref, computed, watch, onMounted} from "vue";
 import {
   TableState,
   TableStateFilters,
 } from "ant-design-vue/es/table/interface";
 import FallbackConstants from "../constants/fallback.constants";
-import {getListImageApi, getListImageAwardApi} from "@/services/apis/image.api";
-import debounce from "lodash/debounce";
+import {getListImageAwardApi} from "@/services/apis/image.api";
+import moment from "moment";
+import {assignAward, getListAwardsApi, unassignedAward} from "@/services/apis/award.api";
 
 type Pagination = TableState["pagination"];
 
 
 interface DataTable {
-  id: string,
-  key?: number | string,
-  url?: string,
-  likes?: number,
-  email?: string,
-  status?: string,
-  time?: string,
-  updatedBy?: string
+  key?: string | number;
+  customer: {
+    createdAt: string;
+    customerId: string;
+    deleted: boolean
+    email: string,
+    id: string
+    isFirstPublish: boolean
+    nickName: string
+    updatedAt: string
+  },
+  award?: {
+    createdAt: string;
+    deleted: boolean;
+    description?: string;
+    id: string;
+    link: string;
+    name: string;
+    updatedAt: string;
+  },
+  createdAt: string;
+  id: string;
+  link: string;
+  status: string;
+  totalLike: number;
+  updatedAt: string;
 }
 
 interface RawData {
-  id: string,
-  url?: string,
-  likes?: number,
-  email?: string,
-  status?: string,
-  time?: string,
-  updatedBy?: string
+  customer: {
+    createdAt: string;
+    customerId: string;
+    deleted: boolean
+    email: string,
+    id: string
+    isFirstPublish: boolean
+    nickName: string
+    updatedAt: string
+  },
+  award?: {
+    createdAt: string;
+    deleted: boolean;
+    description?: string;
+    id: string;
+    link: string;
+    name: string;
+    updatedAt: string;
+  },
+  createdAt: string;
+  id: string;
+  link: string;
+  status: string;
+  totalLike: number;
+  updatedAt: string;
 }
+
+type Sorter = {
+  column: {
+    title: string,
+    key: string,
+    dataIndex: string,
+    sorter: boolean,
+    width: number,
+    align: string
+  },
+  columnKey: string,
+  field: string,
+  order: string
+}
+
+interface Award {
+  createdAt: string;
+  deleted: boolean;
+  description?: string;
+  id: string;
+  link: string;
+  name: string;
+  updatedAt: string;
+}
+
+interface AwardOption {
+  value: string;
+  label: string;
+}
+
 
 const filterOptions = [
   {
-    value: "approved",
-    label: "Approved Images",
+    value: "0",
+    label: "All",
   },
   {
-    value: "awarded",
-    label: "Awarded Images",
+    value: "1",
+    label: "Assigned Award",
   }
 ];
 
@@ -187,7 +273,6 @@ const columns = [
     dataIndex: ["customer", "email"],
     align: "center",
     width: 200,
-    sorter: true,
   },
   {
     title: "Owner's Nickname",
@@ -203,7 +288,6 @@ const columns = [
     dataIndex: "status",
     align: "center",
     width: 100,
-    sorter: true,
   },
   {
     title: "Created At",
@@ -220,32 +304,35 @@ const columns = [
     dataIndex: "updatedAt",
     align: "center",
     width: 150,
-    sorter: true,
     slots: {customRender: "imageUpdatedTime"}
+  },
+  {
+    title: "Award's Name",
+    key: "awardName",
+    dataIndex: ["award", "name"],
+    align: "center",
+    width: 150,
+    sorter: true
+  },
+  {
+    title: "Award's Icon",
+    key: "award-icon",
+    dataIndex: ["award", "link"],
+    align: "center",
+    width: 100,
+    slots: {customRender: "awardImage"}
   },
   {
     title: "Actions",
     key: "actions",
     dataIndex: "actions",
     align: "center",
-    width: 250,
+    width: 200,
     slots: {customRender: "actions"},
   },
 ];
 
-type Sorter = {
-  column: {
-    title: string,
-    key: string,
-    dataIndex: string,
-    sorter: boolean,
-    width: number,
-    align: string
-  },
-  columnKey: string,
-  field: string,
-  order: string
-}
+
 
 export default defineComponent({
   name: "AwardsManagement",
@@ -254,17 +341,24 @@ export default defineComponent({
     const rawData = ref<RawData[]>([]);
     const imageFallback = FallbackConstants.IMAGE_FALLBACK;
     const dataTable = ref<DataTable[]>([]);
-    const currentPage = ref<number | undefined>(1);
-    const showModal = ref<boolean>(false);
     const isLoading = ref<boolean>(false);
+    const select = ref<string>("0");
+    const sort = ref<string>("");
+
+    //variables for modal
+    const imageURL = ref<string | undefined>("");
+    const description = ref<string | undefined>("");
+    const award = ref<string | undefined>("");
+    const id = ref<string>("");
+    const showModal = ref<boolean>(false);
+    const awardOptions = ref<AwardOption[]>([]);
+    const originalAward = ref<Award[]>([]);
+
+    //variables for pagination
+    const currentPage = ref<number | undefined>(1);
     const pageSize = 20;
     const totalItem = ref<number>(0);
-    const imageURL = ref<string | null | ArrayBuffer>("");
-    const description = ref<string>("");
-    const select = ref<string>("approved");
-    const sort = ref<string>("");
-    const award = ref<string>("");
-    const searchInput = ref<string>("");
+
     /* ------------------------- functions ----------------------*/
     const pagination = computed(() => ({
       total: totalItem.value,
@@ -272,47 +366,37 @@ export default defineComponent({
       pageSize: pageSize,
     }));
 
-    const onSearch = debounce((e) => {
-      searchInput.value = e;
-      currentPage.value = 1;
-      if (select.value === "approved") {
-        getListImages({page: currentPage.value || 1, pageSize: pageSize, sort: sort.value, status: "approved"});
-      } else {
-        getListImagesAward({page: currentPage.value || 1, pageSize: pageSize, sort: sort.value, awarded: e});
-      }
-    }, 1000);
-
-    const handleChangeFilter = (value: string) => {
-      select.value = value;
-      if (value === "approved") {
-        getListImages({
-          page: 1,
-          pageSize: pageSize,
-          sort: "",
-          status: "approved"
-        });
-      } else {
-        getListImagesAward({
-          page: 1,
-          pageSize: pageSize,
-          sort: "",
-          awarded: searchInput.value
-        });
-      }
-    };
-
-    const showConfirm = (type: string, data: DataTable, index: number) => {
+    const showConfirm = (data: DataTable) => {
       Modal.confirm({
-        title: `Do you want to ${type} award of this image?`,
+        title: "Do you want to reset award of this image?",
         content:
-            "When clicked the OK button, this dialog will be closed after 1 second",
+            "When the OK button is clicked, the award of this image will be unassigned.",
         onOk() {
-          console.log(type);
-          console.log("data", data);
-          console.log("index", index);
+          isLoading.value = true;
+          unassignedAward(data.id).then(() => {
+            getListImagesAward({
+              page: currentPage.value || 1,
+              pageSize,
+              sort: sort.value,
+              awarded: select.value
+            });
+          }).catch((e) => {
+            message.error(typeof e.response.data.message === "string" ? e.response.data.message : "Bad Request!");
+            isLoading.value = false;
+          });
         },
         onCancel() {
         },
+      });
+    };
+
+    const handleChangeFilter = (value: string) => {
+      select.value = value;
+      getListImagesAward({
+        page: 1,
+        pageSize: pageSize,
+        sort: sort.value,
+        awarded: select.value,
       });
     };
 
@@ -324,37 +408,38 @@ export default defineComponent({
       const sortOrder = sorter.order === "ascend" ? 1 : -1;
       sort.value = sorter.order ? `${sorter.columnKey}:${sortOrder}` : "";
       currentPage.value = page?.current;
-      if (select.value === "approved") {
-        getListImages({
-          page: currentPage.value || 1,
-          pageSize: pageSize,
-          sort: sort.value,
-          status: "approved"
-        });
-      } else {
-        getListImagesAward({
-          page: currentPage.value || 1,
-          pageSize: pageSize,
-          sort: sort.value,
-          awarded: searchInput.value
-        });
-      }
+      getListImagesAward({
+        page: currentPage.value || 1,
+        pageSize: pageSize,
+        sort: sort.value,
+        awarded: select.value
+      });
     };
 
-    const handleOpenModal = (record: any, index: number) => {
+    const handleOpenModal = (record: RawData) => {
       showModal.value = true;
-      award.value = record.award;
-      description.value = record.description;
-      imageURL.value = record.url;
-      console.log(record, index);
+      id.value = record.id;
     };
 
     const handleCloseModal = () => {
       showModal.value = false;
+      id.value = "";
     };
 
     const handleOk = () => {
-      showModal.value = false;
+      if (!award.value) return;
+      assignAward({awardId: award.value, imageId: id.value}).then(() => {
+        message.success("Assigned Award!");
+        getListImagesAward({
+          page: currentPage.value || 1,
+          pageSize,
+          sort: sort.value,
+          awarded: select.value
+        });
+        showModal.value = false;
+      }).catch((e) => {
+        message.error(typeof e.response.data.message === "string" ? e.response.data.message : "Bad Request!");
+      });
     };
 
     const convertDataToTable = () => {
@@ -363,24 +448,6 @@ export default defineComponent({
           ...prev,
           key: index
         };
-      });
-    };
-
-
-    const getListImages = ({
-                             page,
-                             pageSize,
-                             sort,
-                             status
-                           }: { page: number, pageSize: number, sort: string, status?: string }) => {
-      isLoading.value = true;
-      getListImageApi({page, pageSize, sort, status}).then((res) => {
-        rawData.value = res.data.data;
-        totalItem.value = res.data.totalItem;
-        isLoading.value = false;
-      }).catch((e) => {
-        message.error(typeof e.response.data.message === "string" ? e.response.data.message : "Bad Request!");
-        isLoading.value = false;
       });
     };
 
@@ -400,9 +467,60 @@ export default defineComponent({
         isLoading.value = false;
       });
     };
+
+    const getListAward = ({
+                            page,
+                            pageSize,
+                            sort,
+                            search
+                          }: {
+      page?: number,
+      pageSize?: number,
+      sort?: string,
+      search?: string,
+    }) => {
+      isLoading.value = true;
+      getListAwardsApi({
+        page,
+        pageSize,
+        sort,
+        search,
+      }).then((res) => {
+        originalAward.value = res.data.data;
+        awardOptions.value = res.data.data?.map((item: Award) => {
+          return {
+            value: item.id,
+            label: item.name
+          };
+        });
+      }).catch((e) => {
+        message.error(typeof e.response.data.message === "string" ? e.response.data.message : "Bad Request!");
+      });
+    };
+
+    const renderDescriptionAndImage = () => {
+      imageURL.value = originalAward.value.filter((i) => i.id === award.value)[0]?.link;
+      description.value = originalAward.value.filter((i) => i.id === award.value)[0]?.description;
+    };
+
+    const renderTime = (data: string | undefined) => {
+      if (!data) return null;
+      return moment(data).utc(false).format("HH:mm:ss - DD/MM/YYYY");
+    };
+
     /*---------------------------- hooks ---------------------------*/
+    onMounted(() =>
+      getListImagesAward({
+        page: 1,
+        pageSize,
+        sort: sort.value,
+        awarded: select.value
+      })
+    );
+    onMounted(() => getListAward({}));
     watch(rawData, convertDataToTable);
-    watch(searchInput, onSearch);
+    watch(showModal, () => {award.value = awardOptions.value[0].value;});
+    watch(award, renderDescriptionAndImage);
 
     return {
       imageURL,
@@ -414,10 +532,11 @@ export default defineComponent({
       showModal,
       pagination,
       imageFallback,
-      searchInput,
       isLoading,
+      awardOptions,
       filterOptions,
       handleChangeFilter,
+      renderTime,
       showConfirm,
       handleTableChange,
       handleOpenModal,
@@ -436,11 +555,6 @@ export default defineComponent({
     margin-bottom: 20px;
 
     .awards-management-options-label {
-      margin-right: 10px;
-    }
-
-    .awards-management-options-label-2 {
-      margin-left: 10px;
       margin-right: 10px;
     }
   }

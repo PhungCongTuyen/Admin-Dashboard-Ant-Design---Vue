@@ -71,7 +71,7 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, ref, onMounted} from "vue";
+import {defineComponent, ref, onMounted, watch} from "vue";
 import {useRouter} from "vue-router";
 import {getUserDetailApi} from "@/services/apis/user.api";
 import {message} from "ant-design-vue";
@@ -100,6 +100,10 @@ export default defineComponent({
             href.value = [value];
         };
 
+        const checkRouted = () => {
+          href.value = ["/" + route.value[3]];
+        };
+
         const getUserDetail = () => {
             getUserDetailApi().then((res) => {
                 username.value = res.data.email;
@@ -122,6 +126,8 @@ export default defineComponent({
 
         /*------------------------- hooks -----------------------------*/
         onMounted(getUserDetail);
+        watch(route, checkRouted);
+
         return {
             username,
             collapsed,

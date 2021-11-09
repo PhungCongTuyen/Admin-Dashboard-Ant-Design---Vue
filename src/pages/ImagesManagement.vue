@@ -4,7 +4,7 @@
       <span class="images-management-options-label">Search:</span>
       <a-input
           v-model:value="searchInput"
-          placeholder="Award's name"
+          placeholder="Email"
           style="width: 200px"
           :disabled="isLoading"
       >
@@ -12,7 +12,7 @@
           <search-outlined/>
         </template>
       </a-input>
-      <span class="images-management-options-label">Filter:</span>
+      <span class="images-management-options-label-2">Filter:</span>
       <a-select
           v-model:value="select"
           style="width: 120px"
@@ -218,11 +218,11 @@ const filterOptions = [
   },
   {
     value: "reject",
-    label: "Rejected",
+    label: "Reject",
   },
   {
     value: "delete",
-    label: "Deleted",
+    label: "Delete",
   },
 ];
 
@@ -270,7 +270,13 @@ export default defineComponent({
     const onSearch = debounce((e) => {
       searchInput.value = e;
       currentPage.value = 1;
-      getListImages({page: currentPage.value || 1, pageSize: pageSize, sort: sort.value, status: select.value === "" ? undefined : select.value});
+      getListImages({
+        page: currentPage.value || 1,
+        pageSize: pageSize,
+        sort: sort.value,
+        status: select.value === "" ? undefined : select.value,
+        search: e
+      });
     }, 1000);
 
     const handleChangeFilter = (value: string) => {
@@ -279,7 +285,8 @@ export default defineComponent({
         page: 1,
         pageSize: pageSize,
         sort: sort.value,
-        status: select.value === "" ? undefined : select.value
+        status: select.value === "" ? undefined : select.value,
+        search: searchInput.value,
       });
     };
 
@@ -312,7 +319,8 @@ export default defineComponent({
         page: currentPage.value || 1,
         pageSize: pageSize,
         sort: sort.value,
-        status: select.value === "" ? undefined : select.value
+        status: select.value === "" ? undefined : select.value,
+        search: searchInput.value
       });
     };
 
@@ -329,10 +337,11 @@ export default defineComponent({
                              page,
                              pageSize,
                              sort,
-                             status
-                           }: { page: number, pageSize: number, sort: string, status?: string }) => {
+                             status,
+                             search
+                           }: { page: number, pageSize: number, sort: string, status?: string, search: string }) => {
       isLoading.value = true;
-      getListImageApi({page, pageSize, sort, status}).then((res) => {
+      getListImageApi({page, pageSize, sort, status, search}).then((res) => {
         rawData.value = res.data.data;
         totalItem.value = res.data.totalItem;
         isLoading.value = false;
@@ -349,7 +358,8 @@ export default defineComponent({
           page: currentPage.value || 1,
           pageSize,
           sort: sort.value,
-          status: select.value === "" ? undefined : select.value
+          status: select.value === "" ? undefined : select.value,
+          search: searchInput.value
         });
       }).catch((e) => {
         isLoading.value = false;
@@ -367,7 +377,8 @@ export default defineComponent({
       page: currentPage.value || 1,
       pageSize,
       sort: sort.value,
-      status: select.value === "" ? undefined : select.value
+      status: select.value === "" ? undefined : select.value,
+      search: searchInput.value
     }));
     watch(rawData, convertDataToTable);
     watch(searchInput, onSearch);
@@ -399,6 +410,11 @@ export default defineComponent({
 
     .images-management-options-label {
       margin-right: 10px;
+    }
+
+    .images-management-options-label-2 {
+      margin-right: 10px;
+      margin-left: 10px;
     }
   }
 

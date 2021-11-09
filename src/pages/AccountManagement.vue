@@ -290,7 +290,7 @@ export default defineComponent({
         confirmLoading.value = false;
         return;
       }
-      createUserApi({email: username.value, password: password.value, role: role.value}).then((res) => {
+      createUserApi({email: (username.value).toLowerCase(), password: password.value, role: role.value}).then((res) => {
         message.success(`Create account ${res.data.email} success!`);
         confirmLoading.value = false;
         showModal.value = false;
